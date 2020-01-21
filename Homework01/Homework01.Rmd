@@ -1,0 +1,65 @@
+---
+title: "Hibernation Dataset"
+author: "Ken Field"
+date: "1/10/2020"
+output: html_document
+---
+
+This code helps set up the R markdown document to make a nice clean html file for sharing. 
+Click the green triangle to run the code chunk. 
+Note that all of your packages should be installed in the first code chunk.
+Tidyverse should generally be the last package installed.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!require("readxl")) install.packages("readxl"); library(readxl)
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+```
+
+Click this green arrow to run a chunk of code that produces output.
+
+```{r cars}
+summary(cars)
+```
+
+You can also embed plots within code chunks, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot. You should delete the above two code chunks and proceed with your homework below.
+
+The dataset that you will be analyzing came from the following paper:
+Heldstab SA, Isler K, van Schaik CP (2018) Hibernation constrains brain size evolution in mammals. Journal of Evolutionary Biology 31(10): 1582-1588. https://doi.org/10.1111/jeb.13353
+
+The dataset was downloaded from Dryad https://datadryad.org/, a data repository for biology. The citation for this dataset:
+Heldstab SA, Isler K, van Schaik CP (2018) Data from: Hibernation constrains brain size evolution in mammals. Dryad Digital Repository. https://doi.org/10.5061/dryad.753d06g
+
+Download the xls data from that page or from the class github repository and make sure that it is in the same folder as this Rmd file.
+
+```{r Import Data}
+Supplementary_material <- read_excel("Supplementary material.xlsx")
+```
+
+The description of the data:
+List of species and data used for this study (1104 mammalian species) including references for brain mass, body mass, hibernation, diurnality, substrate use, diet and mid-latitude of geographical distribution data
+
+```{r}
+head(Supplementary_material)
+summary(Supplementary_material)
+```
+
+Before you proceed with analyzing this dataset, check that it is complete and that you understand what each variable (column) means. You may need to refer to the paper (available in the zip file).
+![Heldstab et al.](Heldstab_et_al-2018-Journal_of_Evolutionary_Biology.pdf)
+From the Methods section:
+Hibernation was coded as a binary variable with (0) for nonhibernating and (1) for hibernating species with data from the published literature.
+To control for diet quality, species were divided into four categories based on their main diet: herbivore or folivore (1), frugivore/folivore or granivore (2), frugivore/faunivore or omnivore (3) and faunivore, piscivore, carnivore or insectivore (4). A binary coding was used for activity period, with (0) for nocturnal, cathemeral or crepuscular species and (1) for diurnal species. For substrate use, each species was assigned to one of five substrate use categories: semi-aquatic (1), fossorial or semi-fossorial (2), terrestrial or semi-arboreal (3), arboreal (4) and volant (5).
+
+After becoming familiar with the dataset, conduct exploratory data analysis of the key variables to test the hypothesis provided in the title of the paper: "Hibernation constrains brain size evolution in mammals". 
+While you are exploring the data, come up with an alternative hypothesis to test.
+
+To recieve full credit for the assignment you will need to provide: 
+(1) step-by-step exploration of the data that support your chosen method of analysis
+(2) graphs that provide a clear illustration of support (or lack of support) for both hypotheses
+(3) a statistical test that quantifies the level of support for both hypotheses
