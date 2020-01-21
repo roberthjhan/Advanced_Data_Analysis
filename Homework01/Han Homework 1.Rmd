@@ -20,7 +20,8 @@ if (!require("gplots")) install.packages("gplots"); library(gplots)
 ```
 
 
-Import and read data using readxl. Provide summary statistics for the data. This code block also replaces the binary representations of hibernation and diet data with character ones.
+Import and read data using readxl. Provide summary statistics for the data. This code block also replaces the
+binary representations of hibernation and diet data with character ones.
 https://stackoverflow.com/questions/5824173/replace-a-value-in-a-data-frame-based-on-a-conditional-if-statement
 ```{r data summary}
 project_data <- read_excel("Supplementary material.xlsx")
@@ -33,7 +34,9 @@ project_data$diet <- revalue(project_data$diet, c("1" = "herbivore or folivore",
 summary(project_data)
 ```
 
-From these summary statistics we can get a general sense for what data is present in the dataset. For example, we can tell that there are 1104 entries in the dataset as well as which variables are likely continuous or categorical in nature.
+From these summary statistics we can get a general sense for what data is present in the dataset. For example, we
+can tell that there are 1104 entries in the dataset as well as which variables are likely continuous or
+categorical in nature.
 
 The dataset has the given variables:
 
@@ -54,12 +57,16 @@ Ref diet: Null/Cat
 mid-latitude of geographical distribution: ?
 Ref. mid-latitude of geographical distribution: Null/Cat
 
-To take a closer look at the data entries we can look at the data. As a result of the earlier data manipulations some of the variables have been changed from binary representations to character representations.
+To take a closer look at the data entries we can look at the data. As a result of the earlier data manipulations
+some of the variables have been changed from binary representations to character representations.
 ```{r Visualize data as table}
 project_data
 ```
 
-To get a sense for the distribution of data entries across their encompassing groups we can visualize counts of the later in a bar plot. Due to the number of groups represented in the dataset (n = 25) I found it was better to visualize the bar plot horizontally. From this visualization its clear not all groups are equally represented in the dataset. Rodentia, Primates, and Carnivora in particular make up close to 70% of all the species sampled. 
+To get a sense for the distribution of data entries across their encompassing groups we can visualize counts of
+the later in a bar plot. Due to the number of groups represented in the dataset (n = 25) I found it was better 
+to visualize the bar plot horizontally. From this visualization its clear not all groups are equally represented
+in the dataset. Rodentia, Primates, and Carnivora in particular make up close to 70% of all the species sampled. 
 
 https://www.statmethods.net/graphs/bar.html
 https://www.datamentor.io/r-programming/bar-plot/
@@ -72,7 +79,8 @@ ggplot(project_data) +
   theme_cowplot()
 ```
 
-At a glance the Q-Q plots suggest the data is not normally distributed. Using log10 transformations appeared to enhance the Q-Q plot slightly. The idea of creating variables to hold column data came from Fallon.
+At a glance the Q-Q plots suggest the data is not normally distributed. Using log10 transformations appeared to
+enhance the Q-Q plot slightly. The idea of creating variables to hold column data came from Fallon.
 ```{r qq test}
 brain = project_data$`brain mass`
 body = project_data$`body mass`
@@ -96,7 +104,9 @@ qqnorm(log(brain/body), main='Normal Q-Q Plot for log10(brain/body mass)')
 qqline(log(brain/body))
 ```
 
-To look more carefully at each of the quantitative variables, a simple eda was used for brain mass and brain mass relative to body mass. A log10 transformation of brain mass showed less skew and better Q-Q plot. Log10 transformation of relative brain mass did not reduce skew very much; however resulted in a better Q-Q plot.
+To look more carefully at each of the quantitative variables, a simple eda was used for brain mass and brain 
+mass relative to body mass. A log10 transformation of brain mass showed less skew and better Q-Q plot. Log10
+transformation of relative brain mass did not reduce skew very much; however resulted in a better Q-Q plot.
 ```{r simple exploratory data analysis}
 simple.eda(project_data$`brain mass`)
 simple.eda(log(project_data$`brain mass`))
@@ -106,19 +116,25 @@ simple.eda(project_data$`brain mass`/project_data$`body mass`)
 simple.eda(log(project_data$`brain mass`/project_data$`body mass`))
 ```
 
-From the Shapiro-Wilk normality test we get p-values much smaller than 0.05. According to Fallon (she remembers more stats than I do) we would want the p value to be larger than 0.05; since it is not, I believe we assume the data is not normally distributed. This conclusion aligns with with the exploratory data analysis done beforehand where the data did not appear very normal even after log10 transformations.
+From the Shapiro-Wilk normality test we get p-values much smaller than 0.05. According to Fallon (she remembers
+more stats than I do) we would want the p value to be larger than 0.05; since it is not, I believe we assume the
+data is not normally distributed. This conclusion aligns with with the exploratory data analysis done beforehand
+where the data did not appear very normal even after log10 transformations.
 ```{r}
 shapiro.test(project_data$`brain mass`)
 shapiro.test(project_data$`body mass`)
 shapiro.test(project_data$`brain mass`/project_data$`body mass`)
 ```
 
-Show counts of hibernators and nonhibernators as a table There are many hibernators! We can see there are many hibernators in the dataset. Then again we should probably visualize it in a graphic.
+Show counts of hibernators and nonhibernators as a table There are many hibernators! We can see there are many
+hibernators in the dataset. Then again we should probably visualize it in a graphic.
 ```{r Visualize subset of data}
 table(project_data$hibernation)
 ```
 
-Visualize counts of hibernators and nonhibernators as a barplot. There are many hibernators! Though it is somewhat difficult to differentiate some of the coloring, we can still see that a few groups are overrepresented in the dataset. 
+Visualize counts of hibernators and nonhibernators as a barplot. There are many hibernators! Though it is
+somewhat difficult to differentiate some of the coloring, we can still see that a few groups are overrepresented
+in the dataset. 
 ```{r Hibernation barplot}
 ggplot(project_data) + 
   geom_bar(aes(x = `hibernation`, fill = Group)) + 
@@ -127,7 +143,11 @@ ggplot(project_data) +
   theme_cowplot()
 ```
 
-Scatterplot of brain mass and body mass after log10 transformation. The log10 transformation suggests a trend between brain mass and body mass. The hypothesis being tested is whether or not hibernation and brain size are related. This visualization is not directly tied to the hypothesis but dang is it nice to look at. Interestingly, after the log transformation we see a greater concentration of nonhibernators at the tail of the graph. The linear model is very small and not immediately seen. No units are provided in the dataset.
+Scatterplot of brain mass and body mass after log10 transformation. The log10 transformation suggests a trend
+between brain mass and body mass. The hypothesis being tested is whether or not hibernation and brain size are
+related. This visualization is not directly tied to the hypothesis but dang is it nice to look at. Interestingly,
+after the log transformation we see a greater concentration of nonhibernators at the tail of the graph. The
+linear model is very small and not immediately seen. No units are provided in the dataset.
 ```{r}
 ggplot(project_data) +
   aes(y = log(`brain mass`), x = log(`body mass`)) + 
@@ -139,13 +159,16 @@ ggplot(project_data) +
   theme_cowplot()
 ```
 
-The results of the linear regression statistics. The p-value calculated is well under 0.05 which is not really relevant to the hypothesis. 
+The results of the linear regression statistics. The p-value calculated is well under 0.05 which is not really
+relevant to the hypothesis. 
 ```{r Statistics on linear regression}
 mass_fit = lm(log(`brain mass`)~log(`body mass`), data=project_data)
 summary(mass_fit)
 ```
 
-The boxplot was generated to better visualize the differences between the brain mass of hibernators and nonhibernators. a log10 transformation was used again to better see the data. The boxplot suggests the median brain size of hibernating species is actually larger than that of nonhibernators. 
+The boxplot was generated to better visualize the differences between the brain mass of hibernators and
+nonhibernators. a log10 transformation was used again to better see the data. The boxplot suggests the median
+brain size of hibernating species is actually larger than that of nonhibernators. 
 ```{r Brain mass viewed as a boxplot}
 ggplot(project_data) +
   aes(x = `hibernation`, y = log(`brain mass`)) +
@@ -168,7 +191,10 @@ ggplot(project_data) +
   theme_cowplot()
 ```
 
-Accounting for body mass the boxplot suggests the difference in brain size between hibernators and nonhibernators may not be as large as the previous figure suggests. A different function for generating the boxplot was used on a whim. A log10 transformation was used since it made the eda data look nicer. Unsurprisingly the relative brain mass was a low value resulting in negative values after log transformation.
+Accounting for body mass the boxplot suggests the difference in brain size between hibernators and nonhibernators
+may not be as large as the previous figure suggests. A different function for generating the boxplot was used on
+a whim. A log10 transformation was used since it made the eda data look nicer. Unsurprisingly the relative brain
+mass was a low value resulting in negative values after log transformation.
 
 https://www.statmethods.net/graphs/boxplot.html
 ```{r brain mass/body mass ~ hibernation boxplot}
@@ -176,7 +202,9 @@ boxplot(log(`brain mass` / `body mass`) ~ hibernation , data = project_data,
         xlab = "Hibernation", ylab = "Relative brain mass")
 ```
 
-Looking directly at the mean brain mass/relative brain mass suggests nonhibernators have a smaller brain mass than hibernators; however, when accounting for body size nonhibernators may have a greater relative brain mass than hibernators.
+Looking directly at the mean brain mass/relative brain mass suggests nonhibernators have a smaller brain mass
+than hibernators; however, when accounting for body size nonhibernators may have a greater relative brain mass
+than hibernators.
 
 http://www.sthda.com/english/wiki/plot-group-means-and-confidence-intervals-r-base-graphs
 ```{r}
@@ -185,7 +213,10 @@ plotmeans(log(`brain mass`) ~ `hibernation`, data = project_data, xlab = "Diet",
 plotmeans(`brain mass`/`body mass` ~ `hibernation`, data = project_data, xlab = "Diet", ylab = "Relative brain mass")
 ```
 
-Perform T-test to determine if the difference in means is significant. According to the T-test results, the difference in means is significant. With regard to the primary hypothesis being tested, hibernators have a significantly lower brain mass relative to body mass when compared to nonhibernators; however hibernators have a significantly greater brain mass in general when compared to nonhibernators.
+Perform T-test to determine if the difference in means is significant. According to the T-test results, the
+difference in means is significant. With regard to the primary hypothesis being tested, hibernators have a
+significantly lower brain mass relative to body mass when compared to nonhibernators; however hibernators have a
+significantly greater brain mass in general when compared to nonhibernators.
 
 https://www.statmethods.net/stats/ttest.html
 ```{r T-test}
@@ -195,10 +226,14 @@ t.test((`brain mass`/`body mass`) ~ `hibernation`, data = project_data)
 
 ```
 
-Alternative hypothesis: Predatory (carnivore, insectivore, piscivore, faunivore) diets enhances brain size evolution.
+Alternative hypothesis: Predatory (carnivore, insectivore, piscivore, faunivore) diets enhances brain size
+evolution.
 
 The barplot shows a relatively even distribtion of diets amongst the species sampled. 
-For comparison to the original hypothesis we also see that frugivores/foliovores or granivores have a greater ratio of nonhibernators to hibernators than any other diet group. If the former hypothesis were true we might expect the carnivore/piscivore/insectivore diet to have the greatest brain mass given the greater number of nonhibernators in that category.
+For comparison to the original hypothesis we also see that frugivores/foliovores or granivores have a greater
+ratio of nonhibernators to hibernators than any other diet group. If the former hypothesis were true we might
+expect the carnivore/piscivore/insectivore diet to have the greatest brain mass given the greater number of
+nonhibernators in that category.
 ```{r barplot diet}
 ggplot(project_data) +
   aes(x = diet, fill = hibernation) +
@@ -206,7 +241,12 @@ ggplot(project_data) +
   theme_cowplot()
 ```
 
-Species which feed on other animals showed a higher maximum relative brain mass than other diet types. That being said, the median and interquartile range of said diet was nothing specatacular and even fell behind two plant based diets. I would have liked to show the means of each diet on the boxplot but was unable to figure that one out. I also chose to visualize a boxplot of the log transformed brain mass. Interestingly the boxplots suggests preying on other animals is associated with less brain mass than a strictly plant based diet. The herbivore or folivore diet in particular appeared to be linked to animals with the greatest brain mass.
+Species which feed on other animals showed a higher maximum relative brain mass than other diet types. That being
+said, the median and interquartile range of said diet was nothing specatacular and even fell behind two plant
+based diets. I would have liked to show the means of each diet on the boxplot but was unable to figure that one
+out. I also chose to visualize a boxplot of the log transformed brain mass. Interestingly the boxplots suggests
+preying on other animals is associated with less brain mass than a strictly plant based diet. The herbivore or
+folivore diet in particular appeared to be linked to animals with the greatest brain mass.
 ```{r boxplots of brain mass and relative brain mass}
 boxplot(log(`brain mass`) ~ diet , data = project_data,
         xlab = "Diet", ylab = " log10 Brain mass")
@@ -215,7 +255,11 @@ boxplot(`brain mass` / `body mass` ~ diet , data = project_data,
         xlab = "Diet", ylab = "Relative brain mass (units)")
 ```
 
-Since the range and quartiles of the data was visualized earlier, I thought a good next step would be to see the means, especially given that I couldnt figure out how to overlay them onto the boxplot. We can see herbivores/foliovores have the greatest average brain mass but the lowest relative brain mass. The carnivore/piscivore/insectivore diet actually had the smallest average brain mass which contradicts my hypothesis. These observations align with what was shown in the boxplots.
+Since the range and quartiles of the data was visualized earlier, I thought a good next step would be to see the
+means, especially given that I couldnt figure out how to overlay them onto the boxplot. We can see
+herbivores/foliovores have the greatest average brain mass but the lowest relative brain mass. The
+carnivore/piscivore/insectivore diet actually had the smallest average brain mass which contradicts my
+hypothesis. These observations align with what was shown in the boxplots.
 
 ```{r Mean brain mass and relative brain mass}
 # Plot the mean of teeth length by dose groups
@@ -224,15 +268,20 @@ plotmeans(log(`brain mass`) ~ `diet`, data = project_data, xlab = "Diet", ylab =
 plotmeans((`brain mass` / `body mass`) ~ `diet`, data = project_data, xlab = "Diet", ylab = " Relative brain mass")
 ```
 
-Not sure if this is the appropriate test. Obviously the datset used was not normally distributed as discussed earlier. The calculated p-values are much smaller than 0.05 suggesting the differences between some of the means are statistically significant. The difference between herbivore/folivore and any other diet is certainly noticeable. Regardless, the alternative hypothesis is definitely not supported by the dataset on hand. Predatory (carnivore, insectivore, piscivore, faunivore) diets do not appear to be associated with increased brain size whether it be in straight brain mass or relative brain mass.
+Not sure if this is the appropriate test. Obviously the datset used was not normally distributed as discussed
+earlier. The calculated p-values are much smaller than 0.05 suggesting the differences between some of the means
+are statistically significant. The difference between herbivore/folivore and any other diet is certainly
+noticeable. Regardless, the alternative hypothesis is definitely not supported by the dataset on hand. Predatory
+(carnivore, insectivore, piscivore, faunivore) diets do not appear to be associated with increased brain size
+whether it be in straight brain mass or relative brain mass.
 
 https://www.r-bloggers.com/performing-anova-test-in-r-results-and-interpretation/
 ```{r}
 res1.aov <- aov(`brain mass` ~ diet, data = project_data)
-summary(res.aov)
+summary(res1.aov)
 
 res2.aov <- aov(`brain mass`/`body mass` ~ diet, data = project_data)
-summary(res.aov)
+summary(res2.aov)
 ```
 
 
