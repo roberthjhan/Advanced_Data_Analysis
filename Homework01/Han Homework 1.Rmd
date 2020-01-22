@@ -29,8 +29,10 @@ project_data <- read_excel("Supplementary material.xlsx")
 library(plyr)
 project_data$hibernation <- as.character(project_data$hibernation)
 project_data$hibernation <- revalue(project_data$hibernation, c("0" = "Hibernator", "1" = "Nonhibernator"))
+
 project_data$diet <- as.character(project_data$diet)
 project_data$diet <- revalue(project_data$diet, c("1" = "herbivore or folivore", "2" = "frugivore/folivore or granivore", "3" = "frugivore/faunivore or omnivore", "4" = "faunivore, piscivore, carnivore or insectivore"))
+
 summary(project_data)
 ```
 
