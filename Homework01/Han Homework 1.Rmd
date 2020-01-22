@@ -128,7 +128,7 @@ shapiro.test(project_data$`body mass`)
 shapiro.test(project_data$`brain mass`/project_data$`body mass`)
 ```
 
-Show counts of hibernators and nonhibernators as a table There are many hibernators! We can see there are many
+Show counts of hibernators and nonhibernators as a table. We can see there are many
 hibernators in the dataset. Then again we should probably visualize it in a graphic.
 ```{r Visualize subset of data}
 table(project_data$hibernation)
