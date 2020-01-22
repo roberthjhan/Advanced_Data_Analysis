@@ -2,7 +2,7 @@
 title: "Han homework 1"
 author: "Robert Han"
 date: "1/13/2020"
-output: html_document
+output: github_document
 ---
 
 
