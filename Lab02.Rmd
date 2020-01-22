@@ -1,0 +1,70 @@
+---
+title: "Lab02"
+author: "Robert Han"
+date: "1/22/2020"
+output: html_document
+---
+
+# Github
+
+1. Log into github and accept any invitations that I have sent you to join groups, etc.
+2. Click on Repositories and then your name to view the main repo for this course. This is where you will find new homework assignments and upload completed assignments.
+3. Within this repo you will (possibly) find "Issues", which are notes from me, your classmates, or yourself about your repo. If you have any open issues you should click on them and resolve them. You can edit files directly in Github if you need to make a minor change.
+4. Back at the *Code* tab of the repo, click the green "Clone or download" button and then click the "Copy" icon to copy the https url of this repo. You will need it for the next step.
+
+# Github and R Studio
+
+1. You will connect your repo directly to R Studio to enable you to manage version control from within R Studio. You can do this from multiple computers, but it increases the likelyhood of a conflict. 
+2. There are multiple ways to connect an R Studio project to Github, depending on whether you set up Github or the R Project first. We will be following the directions (https://happygitwithr.com/existing-github-first.html) for setting up Github first, starting with section **16.2**.
+3. In R Studio, start a new Project: File > New Project > Version Control > Git. 
+4. In the “repository URL” paste the URL of your new GitHub repository. It will be something like this https://github.com/username/lastname_firstname.git.
+5. Save the project in a local or Netspace directory (NOT Google Drive or Dropbox). Click "Open in New Session".
+6. In the Files pane of R Studio you should see the path to the local directory. If you have any files to add to the repo, you can copy them to this folder.
+
+## Introducing RStudio to your Git username
+
+```{r Git and RStudio}
+if (!require("usethis")) install.packages("usethis"); library(usethis)
+use_git_config(user.name = "roberthjhan", user.email = "roberthjhan@gmail.com")
+git_sitrep()
+```
+
+## Version Control
+
+1. Click on the Git tab in the upper right pane of R Studio. (If you don't see it, something is wrong and you will need to start over.)
+2. Before you do anything else "Pull" from the master repo to make sure that you have the current version. This is unnecessary today, but it is a good habit to prevent future conflicts.
+3. Edit a file! To test the waters, click the README.md file (or create a new text file called README.md). Make some edits and then save the file.
+4. Back in the Git pane, you should now see README.md (and possibly some other files). Click the Staged box next to all of them (unless you don't want to Push them to the master repo). Click Commit.
+5. You will now see a Review Changes panel that will require you to do two things:
+a) Resolve any differences between your version and the master version. 
+b) Provide a "Commit message" that summarizes what you are doing at the moment. This commit message lets everyone else know (and reminds you) what you were working on when you made these changes. 
+6. **Commit** and then **Push**. Push is what makes changes to the *master* repo. Changes that have been committed, but not pushed, exist in a twilight zone called the staging area. It is good practice to commit often, while you work, but don't forget to push those change when you are done. Also don't forget to **Pull** before you start working on a local repo - or you can end up with a painful forked branch. (We will learn next week how to deliberately fork a branch!)
+7. Conflicts will happen! Check out https://happygitwithr.com/ to help with problems.
+
+## Collaboration
+1. Back on https://github.com/Bucknell-Biol364, you should see the whole list of class repos, including Prof. Field's main repo for the class: https://github.com/Bucknell-Biol364/Biology364-2020. Enter that repo and explore.
+2. Suggest a change! Find text (tex) or markdown (Rmd or md) file and open it within Github.
+3. Click the line number where you want to see a change and then click the three dots to select "Reference in a new issue".
+4. Give your issue a name and then add some comments below. This will be sent to the owner of the repo (Prof. Field) and any Github "collaborators". If you want to tag additional classmates, use @githubusername to tag them, or @Bucknell-Biol364/2020students to tag everyone. To tag me (to ask a question about the code or to turn in an assignment) use @KField-Bucknell. 
+5. Resolving Issues. When you have been tagged in an issue, or when one has been raised on your own repo, you will see it in the Issues menu within each repo or on the main Github Issues menu in the black bar. Issues are the main way that we will communicate about questions about code - stop e-mailing me Rmd files or screenshots! Issues can be commented on and then, if they are completely resolved, they should be **Closed**.
+
+## Document Types
+
+1. For most homework assignments, you will find a template .Rmd file in the class repository by Tuesday of the week it is due. (Homeworks are due Sunday at noon, unless changed.)
+2. Projects and other work in R should usually be analyzed using an Rmd or R Notebook file. When you make an Rmd file in R Studio, you should change the output type to `output: github_document`. This format will allow you to use the Knit function to generate a Github-friendly .md file. This file can be viewed directly in Github and is the easiest way for classmates (and me) to view the output.
+3. If your goal is to share your work outside this class or publicly, then you will want to use `output: html_document` in the header of the .Rmd file. This will generate an html file that, after it is downloaded from Github, can be viewed by any web browswer. There also might be occasions when you want to use `output: pdf_document` instead.
+
+# The Biology 364/664 Team
+```{r}
+Biol364_664roster <- read.csv("../00-Syllabus/Biol364_664roster.csv", stringsAsFactors=FALSE)
+print(Biol364_664roster)
+```
+
+## Rmd code for loading a library
+
+You should always use this format for loading libraries in your Rmd files.
+
+```{r}
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+```
+
