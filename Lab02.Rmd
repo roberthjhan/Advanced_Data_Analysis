@@ -2,7 +2,7 @@
 title: "Lab02"
 author: "Robert Han"
 date: "1/22/2020"
-output: html_document
+output: github_document
 ---
 
 # Github
@@ -56,7 +56,7 @@ b) Provide a "Commit message" that summarizes what you are doing at the moment. 
 
 # The Biology 364/664 Team
 ```{r}
-Biol364_664roster <- read.csv("../00-Syllabus/Biol364_664roster.csv", stringsAsFactors=FALSE)
+Biol364_664roster <- read.csv("Biol364_664roster.csv", stringsAsFactors=FALSE)
 print(Biol364_664roster)
 ```
 
