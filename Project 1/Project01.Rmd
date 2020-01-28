@@ -1,0 +1,61 @@
+---
+title: "Group Project 1"
+subtitle: "Biology 368/664 Bucknell University"
+output: html_notebook
+author: Prof. Ken Field
+date: 27 Jan 2020
+---
+
+This project will require you to develop a tutorial to teach students in one of the Biology, Neuroscience, or Animal Behavior courses how to use R for graphing and data analysis. 
+
+## Classes
+
+You will need to identify 1 or 2 other students to work with on the same tutorial. 
+The course must be a 300-level course and you should plan on working with the instructor of that course to develop the tutorial.
+
+```{r echo=FALSE}
+biologyClasses <- read.csv("2019-2020BiologyCourses.csv", stringsAsFactors=FALSE)
+print(biologyClasses)
+```
+
+## Groups
+
+You will need to identify 1 or 2 other students to work with on the same tutorial. 
+The course must be a 300-level course and you should plan on working with the instructor of that course to develop the tutorial.
+
+```{r echo=FALSE}
+Biol364_664roster <- read.csv("../00-Syllabus/Biol364_664roster.csv", stringsAsFactors=FALSE)
+# Biol364_664roster$Course <- c("Biology 205",
+#                               "Biology 206",
+#                               "Biology 207",
+#                               "Biology 206",
+#                               "Biology 206",
+#                               "A. Behavior 266",
+#                               "Neuro 253",
+#                               "Biology 208",
+#                               "Biology 205",
+#                               "Biology 208",
+#                               "Biology 208",
+#                               "Biology 207")
+# summary(as.factor(Biol364_664roster$Course))
+print(Biol364_664roster)
+```
+
+## Grading
+
+Each student will be expected to complete the following tasks to earn 85% of the points available for this assignment (21/25).
+
+- Identify and obtain suitable dataset
+- Create a Github repository and use version control to collaborate on the project
+- Spend 4-6 hours preparing, coding, and testing tutorial
+  + Data exploration
+  + Data visualization
+  + Hypothesis testing
+- Present tutorial in class
+- Provide public archive suitable for sharing to students/faculty
+
+Each group should use an *Acknowledgements* section to document the participation of each member and the collaboration within and between groups.
+
+Additional credit will be awarded for providing assistance to other groups and for the development of a tutorial that goes beyond the minimal expectations listed above.
+
+
