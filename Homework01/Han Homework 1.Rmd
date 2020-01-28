@@ -225,7 +225,6 @@ https://www.statmethods.net/stats/ttest.html
 t.test(log(`brain mass`) ~ `hibernation`, data = project_data)
 
 t.test((`brain mass`/`body mass`) ~ `hibernation`, data = project_data)
-
 ```
 
 Alternative hypothesis: Predatory (carnivore, insectivore, piscivore, faunivore) diets enhances brain size
