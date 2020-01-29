@@ -1,0 +1,187 @@
+---
+title: "Lab 03"
+output: github_document
+author: "Ken Field"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!require("NHANES")) install.packages("NHANES"); library(NHANES)
+if (!require("UsingR")) install.packages("UsingR"); library(UsingR)
+if (!require("cowplot")) install.packages("cowplot"); library(cowplot)
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+```
+
+## NHANES Dataset
+
+Data from the US National Health and Nutrition Examination Study
+https://www.cdc.gov/nchs/nhanes/index.htm
+
+This is survey data collected by the US National Center for Health Statistics (NCHS) which has
+conducted a series of health and nutrition surveys since the early 1960’s. Since 1999 approximately
+5,000 individuals of all ages are interviewed in their homes every year and complete the health
+examination component of the survey. The health examination is conducted in a mobile examination
+center (MEC).
+
+A description of the variables can be found in the package description.
+
+```{r NHANES}
+data("NHANES")
+summary(NHANES)
+help(NHANES)
+```
+
+## Model of Height Data
+
+First look at the entire data set.
+
+```{r Histogram}
+ggplot(NHANES) +
+  aes(x = Height) +
+  geom_histogram(bins=100) +
+  theme_cowplot()
+```
+
+Now lets just look at the data for children aged 2-17.
+
+```{r Children Subset}
+NHANES_child <- subset(NHANES, (Age >= 2 & Age <= 17))
+NHANES_child <- drop_na(NHANES_child, Height)
+ggplot(NHANES_child) +
+  aes(x = Height) +
+  geom_histogram(bins=100) +
+  theme_cowplot()
+```
+
+## Model of the data
+
+```{r Simple Model}
+mean(NHANES_child$Height)
+sd(NHANES_child$Height)
+summary(NHANES_child$Height)
+```
+
+The error is large when using mean to predict the height
+
+
+```{r}
+error_mean <- NHANES_child$Height - mean(NHANES_child$Height)
+ggplot(NULL, aes(error_mean)) +
+  geom_histogram(bins = 100) + 
+  xlim(-60, 60) +
+  labs(
+    x = "Error when predicting height with mean"
+  )
+rmse_mean <- sqrt(mean(error_mean**2))
+rmse_mean
+```
+
+More sophisticated models are necessary
+
+```{r Age}
+p1 <- NHANES_child %>% 
+  ggplot(aes(x = Age, y = Height)) +
+  geom_point(position = "jitter",size=0.05) +
+  scale_x_continuous(breaks = seq.int(0, 20, 2)) +
+  ggtitle('A: original data') +
+  theme_cowplot()
+
+lmResultHeightOnly <- lm(Height ~ Age + 0, data=NHANES_child)
+lmResultHeightOnly
+summary(lmResultHeightOnly)
+rmse_heightOnly <- sqrt(mean(lmResultHeightOnly$residuals**2))
+rmse_heightOnly
+
+p2 <- NHANES_child %>% 
+  ggplot(aes(x = Age, y = Height)) +
+  geom_point(position = "jitter",size=0.05) +
+  scale_x_continuous(breaks = seq.int(0, 20, 2)) + 
+  annotate('segment',x=0,xend=max(NHANES_child$Age),
+           y=0,yend=max(lmResultHeightOnly$fitted.values),
+           color='blue',lwd=1) + 
+  ggtitle('B: age') +
+  theme_cowplot()
+
+lmResultHeight <- lm(Height ~ Age, data=NHANES_child)
+lmResultHeight
+summary(lmResultHeight)
+rmse_height <- sqrt(mean(lmResultHeight$residuals**2))
+rmse_height
+
+p3 <- NHANES_child %>% 
+  ggplot(aes(x = Age, y = Height)) +
+  geom_point(position = "jitter",size=0.05) +
+  scale_x_continuous(breaks = seq.int(0, 20, 2)) + 
+  geom_smooth(method='lm',se=FALSE) + 
+  ggtitle('C: age + constant') +
+  theme_cowplot()
+
+plot_grid(p1,p2,p3,ncol=2)
+```
+
+This model is much better than using only the mean.
+
+Can we make it even better?
+
+```{r}
+NHANES_child %>% 
+  ggplot(aes(x = Age, y = Height)) +
+  geom_point(aes(colour = factor(Gender)), 
+             position = "jitter", 
+             alpha = 0.8,
+             size=0.05) +
+  geom_smooth(method='lm',aes(group = factor(Gender), 
+                              colour = factor(Gender))) + 
+  theme(legend.position = c(0.25,0.8)) + 
+  ggtitle('age + constant + gender') +
+  theme_cowplot()
+
+lmResultGenderAge <- lm(Height ~ Gender + Age, data=NHANES_child)
+lmResultGenderAge
+summary(lmResultGenderAge)
+```
+
+## Test Assumptions
+
+```{r Data Exploration}
+
+```
+
+```{r t Test}
+t.test(hatch.mass ~ sex, data = quail)
+```
+
+This shows us that hatch mass does depend on the sex of the chick.
+
+After exploring the dataset, formulate some additional tentative hypotheses that you wish to test.
+I have provided some examples of the types of graphs that you could consider. 
+You should alter these examples for your own use (and fix any issues that find.)
+
+```{r Data Visualization}
+
+ggplot(quail) +
+  aes(x = hatch.mass) +
+  geom_histogram(bins=100) +
+  theme_cowplot()
+
+ggplot(quail) +
+  aes(x = hatch.mass, color = sex, fill = sex) +
+  geom_histogram(binwidth = 0.5, position = "dodge") +
+  theme_cowplot()
+
+ggplot(quail) +
+  aes(x = hatch.mass,  fill = sex) + 
+  geom_density(alpha=.3) +
+  theme_cowplot()
+```
+
+There appears to be some other factors influencing the hatch mass, in addition to sex. 
+Explore the data and determine how to test a hypothesis about one of these other factors.
+
+```{r Statistical Tests}
+
+```
+
+Acknowledgements
+=========================
+
