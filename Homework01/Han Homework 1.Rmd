@@ -169,7 +169,7 @@ summary(mass_fit)
 ```
 
 The boxplot was generated to better visualize the differences between the brain mass of hibernators and
-nonhibernators. a log10 transformation was used again to better see the data. The boxplot suggests the median
+nonhibernators. A log10 transformation was used again to better see the data. The boxplot suggests the median
 brain size of hibernating species is actually larger than that of nonhibernators. 
 ```{r Brain mass viewed as a boxplot}
 ggplot(project_data) +
