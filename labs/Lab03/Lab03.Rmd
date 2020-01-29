@@ -45,8 +45,8 @@ ggplot(NHANES) +
 Now lets just look at the data for children aged 2-17.
 
 ```{r Children Subset}
-NHANES_child <- subset(NHANES, (Age >= 2 & Age <= 17))
-NHANES_child <- drop_na(NHANES_child, Height)
+NHANES_child <- subset(NHANES, (Age >= 2 & Age <= 17)) #subset the full dataset
+NHANES_child <- drop_na(NHANES_child, Height) #NA removal
 ggplot(NHANES_child) +
   aes(x = Height) +
   geom_histogram(bins=100) +
@@ -54,16 +54,16 @@ ggplot(NHANES_child) +
 ```
 
 ## Model of the data
-
+mean +- std deviation 
 ```{r Simple Model}
 mean(NHANES_child$Height)
 sd(NHANES_child$Height)
-summary(NHANES_child$Height)
+cat(paste('data', mean(NHANES_child$Height), '+/-', sd(NHANES_child$Height))) #poor model
+summary(NHANES_child$Height) #This is the better model
 ```
 
 The error is large when using mean to predict the height
-
-
+Bad range of error with the first model (mean +/- std dev)
 ```{r}
 error_mean <- NHANES_child$Height - mean(NHANES_child$Height)
 ggplot(NULL, aes(error_mean)) +
@@ -73,7 +73,7 @@ ggplot(NULL, aes(error_mean)) +
     x = "Error when predicting height with mean"
   )
 rmse_mean <- sqrt(mean(error_mean**2))
-rmse_mean
+rmse_mean 
 ```
 
 More sophisticated models are necessary
@@ -92,7 +92,7 @@ summary(lmResultHeightOnly)
 rmse_heightOnly <- sqrt(mean(lmResultHeightOnly$residuals**2))
 rmse_heightOnly
 
-p2 <- NHANES_child %>% 
+p2 <- NHANES_child %>% #whats %>%
   ggplot(aes(x = Age, y = Height)) +
   geom_point(position = "jitter",size=0.05) +
   scale_x_continuous(breaks = seq.int(0, 20, 2)) + 
@@ -102,11 +102,11 @@ p2 <- NHANES_child %>%
   ggtitle('B: age') +
   theme_cowplot()
 
-lmResultHeight <- lm(Height ~ Age, data=NHANES_child)
+lmResultHeight <- lm(Height ~ Age, data=NHANES_child) #implied constant in linear model (lm(Height ~ Age,...))
 lmResultHeight
 summary(lmResultHeight)
 rmse_height <- sqrt(mean(lmResultHeight$residuals**2))
-rmse_height
+cat(paste('Root mean sq erro: ', rmse_height))
 
 p3 <- NHANES_child %>% 
   ggplot(aes(x = Age, y = Height)) +
@@ -116,17 +116,23 @@ p3 <- NHANES_child %>%
   ggtitle('C: age + constant') +
   theme_cowplot()
 
-plot_grid(p1,p2,p3,ncol=2)
+plot_grid(p1,p2,p3,ncol=2) #plot several figures as one
 ```
-
 This model is much better than using only the mean.
+Dotplot by default adds jitter and bins to make data easier to see
+As children get older they get taller
+B: linear relationship (age/height), problem lowest age is 2 not 0, need to add a constant (not hard-coded)
+Good model
+Want RTMSE that is low
+----------------------------------------------------
 
 Can we make it even better?
+Yes by looking at other factors contributing to height (create seperate fits for male and female)
 
 ```{r}
 NHANES_child %>% 
   ggplot(aes(x = Age, y = Height)) +
-  geom_point(aes(colour = factor(Gender)), 
+  geom_point(aes(colour = factor(Gender)),  #differentiate male female
              position = "jitter", 
              alpha = 0.8,
              size=0.05) +
@@ -138,50 +144,27 @@ NHANES_child %>%
 
 lmResultGenderAge <- lm(Height ~ Gender + Age, data=NHANES_child)
 lmResultGenderAge
-summary(lmResultGenderAge)
+summary(lmResultGenderAge) #r^2 closer to one is bueno
 ```
 
 ## Test Assumptions
 
-```{r Data Exploration}
-
-```
-
-```{r t Test}
-t.test(hatch.mass ~ sex, data = quail)
-```
-
-This shows us that hatch mass does depend on the sex of the chick.
-
-After exploring the dataset, formulate some additional tentative hypotheses that you wish to test.
-I have provided some examples of the types of graphs that you could consider. 
-You should alter these examples for your own use (and fix any issues that find.)
-
-```{r Data Visualization}
-
-ggplot(quail) +
-  aes(x = hatch.mass) +
-  geom_histogram(bins=100) +
-  theme_cowplot()
-
-ggplot(quail) +
-  aes(x = hatch.mass, color = sex, fill = sex) +
-  geom_histogram(binwidth = 0.5, position = "dodge") +
-  theme_cowplot()
-
-ggplot(quail) +
-  aes(x = hatch.mass,  fill = sex) + 
-  geom_density(alpha=.3) +
-  theme_cowplot()
-```
-
-There appears to be some other factors influencing the hatch mass, in addition to sex. 
-Explore the data and determine how to test a hypothesis about one of these other factors.
-
-```{r Statistical Tests}
-
-```
 
 Acknowledgements
 =========================
 
+```{r EZ print}
+#to call EZ_print store the things to be printed in a variable (l = c(a, b, c, d...)) then call EZ_print(l)
+EZ_print <- function(pirate) {
+  return(cat(paste(pirate)))
+  }
+```
+
+
+
+```{r}
+a <- 42
+b <- "hello"
+c = c(a, b)
+EZ_print(c)
+```
