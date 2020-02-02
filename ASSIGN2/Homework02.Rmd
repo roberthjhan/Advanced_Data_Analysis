@@ -160,7 +160,7 @@ that.
 ```{r Quick look at hatch day and hatch mass}
 ggplot(quail) + 
   aes(x = hatching.day, y = hatch.mass) +
-  geom_boxplot() +
+  geom_boxplot(outlier.shape = NA) +
   geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
   guides(alpha=FALSE) +
   xlab("Hatch day") + 
@@ -273,7 +273,7 @@ mean hatch mass is negligible when we look at the paternal line. Similar observa
 ```{r Boxplots and mean comparison of hatch mass by parental line}
 ggplot(quail) + 
   aes(x = m_line, y = hatch.mass) +
-  geom_boxplot() +
+  geom_boxplot(outlier.shape = NA) +
   geom_point(alpha = 0.3, position = "jitter", colour = "red") +
   guides(alpha=FALSE) +
   xlab("Maternal line") + 
@@ -282,7 +282,7 @@ ggplot(quail) +
 
 ggplot(quail) + 
   aes(x = p_line, y = hatch.mass) +
-  geom_boxplot() +
+  geom_boxplot(outlier.shape = NA) +
   geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
   guides(alpha=FALSE) +
   xlab("Paternal line") + 
@@ -294,7 +294,7 @@ plotmeans(hatch.mass ~ p_line, data = quail, xlab = "Paternal line", ylab = "Hat
 
 ggplot(quail) + 
   aes(x = m_line, y = egg.mass) +
-  geom_boxplot() +
+  geom_boxplot(outlier.shape = NA) +
   geom_point(alpha = 0.3, position = "jitter", colour = "red") +
   guides(alpha=FALSE) +
   xlab("Maternal line") + 
@@ -303,7 +303,7 @@ ggplot(quail) +
 
 ggplot(quail) + 
   aes(x = p_line, y = egg.mass) +
-  geom_boxplot() +
+  geom_boxplot(outlier.shape = NA) +
   geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
   guides(alpha=FALSE) +
   xlab("Paternal line") + 
@@ -332,22 +332,24 @@ boxplots. Anyways, maternal investment is suggested to be a dominating factor in
 ```{r Boxplots and mean comparison of parental investment by parental crosses}
 ggplot(quail) + 
   aes(x = parents, y = hatch.mass) +
-  geom_boxplot() +
+  geom_boxplot(outlier.shape = NA) +
   geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
   guides(alpha=FALSE) +
   xlab("Parent cross") + 
   ylab("Hatch mass (g)") +
-  theme_cowplot()
+  theme_cowplot() + 
+  theme(axis.text.x = element_text(angle = 30)) 
 
 ggplot(quail) + 
   aes(x = parents, y = egg.mass) +
-  geom_boxplot() +
+  geom_boxplot(outlier.shape = NA) +
   geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
   guides(alpha=FALSE) +
   xlab("Parent cross") + 
   ylab("Egg mass (g)") +
-  theme_cowplot()
-
+  theme_cowplot() + 
+  theme(axis.text.x = element_text(angle = 30)) 
+  
 plotmeans(hatch.mass ~ parents, data = quail, xlab = "Parents", ylab = "Hatch mass (g)")
 plotmeans(egg.mass ~ parents, data = quail, xlab = "Parents", ylab = "Egg mass (g)")
 ```
@@ -394,7 +396,8 @@ ggplot(mass) +
       geom_boxplot(aes(x = parents, y = log(value), color = variable)) + 
       xlab("Parent cross") +
       ylab("log10 mass (g)") +
-      theme_cowplot()
+      theme_cowplot() + 
+      theme(axis.text.x = element_text(angle = 30)) 
 ```
 
 Egg and hatch mass are very likely dependent variables but we can use the two to see the relationship between chick
@@ -424,12 +427,13 @@ quail <- mutate(quail, just_the_egg = (egg.mass - hatch.mass))
 
 ggplot(quail) + 
   aes(x = parents, y = just_the_egg) +
-  geom_boxplot() +
+  geom_boxplot(outlier.shape = NA) +
   geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
   guides(alpha=FALSE) +
   xlab("Parental cross") + 
   ylab("just_the_egg mass (g)") +
-  theme_cowplot()
+  theme_cowplot() + 
+  theme(axis.text.x = element_text(angle = 30)) 
 
 plotmeans(hatch.mass ~ parents, data = quail, xlab = "Parents", ylab = "just_the_egg mass (g)")
 ```
