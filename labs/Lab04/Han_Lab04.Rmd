@@ -221,7 +221,7 @@ The example from the previous code chunk can be expressed more clearly using a p
 ```{r}
 BatData %>% 
   group_by(Class) %>%
-  summarize(Mass=mean(Mass, na.rm = TRUE), BCI=mean(BCI, na.rm = TRUE))
+  dplyr::summarize(Mass=mean(Mass, na.rm = TRUE), BCI=mean(BCI, na.rm = TRUE))
 ```
 
 This way we don’t have to create a set of temporary variables along the way or create a massive nested sequence of function calls.
@@ -232,7 +232,10 @@ Use a pipeline to compare Mass and BCI of each of the Classes of bat in each Sea
 (Hint: group_by can accept more than one Name)
 
 ```{r}
-
+BatData %>%
+  group_by(Class, Season) %>%
+  dplyr::summarize(Mass=mean(Mass, na.rm = TRUE), BCI=mean(BCI, na.rm = TRUE))
+  
 ```
 
 ## Summary
