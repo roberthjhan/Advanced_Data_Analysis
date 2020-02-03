@@ -1,0 +1,234 @@
+---
+title: "Lab 04"
+author: "Biology Student"
+date: "02/02/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading Libraries
+Use the following syntax to load any libraries that you need. This code will prevent errors that will interfere with knitting of the Rmd file.
+Also note that the `include=FALSE` option will prevent this code chunk from appearing in the markdown file.
+
+First we will load the "conflicted" library. This will help us identify any problems with packages that we use.
+
+We will then load the entire tidyverse library, which includes *dplyr*, *ggplot2*, *readr*, and other packages.
+
+```{r Load Libraries, include=FALSE}
+if (!require("conflicted")) install.packages("conflicted"); library(conflicted)
+# Load other packages here.
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+```
+
+## Objectives for Lab 4
+
+1. Introduction to *dplyr* grammar and functions
+2. Exploratory data analysis using *dplyr* 
+
+```{r dplyr help, include=FALSE}
+?dplyr
+# Run the line below to view detailed help about dplyr (but keep it commented to allow knitting)
+#browseVignettes(package = "dplyr")
+```
+
+## Exploratory Data Analysis with R
+
+This lab is adapted from Roger Peng's *Exploratory Data Analysis with R*, Chapter 4.
+https://leanpub.com/exdata/read_full
+
+## Verbs in dplyr
+
+One of the main parts of the *dplyr* data grammar is the use of verbs to manipulate data frames.
+There are six main verbs in *dplyr*:
+
+- `filter()` to select cases based on their values.
+- `arrange()` to reorder the cases.
+- `select()` and `rename()` to select variables based on their names.
+- `mutate()` and `transmute()` to add new variables that are functions of existing variables.
+- `summarise()` to condense multiple values to a single value.
+- `sample_n()` and `sample_frac()` to take random samples.
+
+The preferred syntax of *dplyr* will use a data frame first, followed by a verb. The output will be another (altered) data frame. 
+However, these verbs can also be used like traditional R functions where you have the verb(subject) syntax.
+We will use this traditional syntax to learn what these functions do, and then introduce the preferred (pipeline) syntax.
+
+## Loading data
+
+For this exercise we will be using data from Prof. Reeder's fieldwork in Uganda. Epauletted fruit bats were collected at two different
+times of the year for this study and a variety of health metrics were measured.
+
+Note that this data should not be shared outside this class without permission.
+
+```{r}
+BatData <- read_csv("UgandaBatsFilteredMetrics.csv", 
+    col_types = cols(`Collection date` = col_date(format = "%m/%d/%y")))
+# The col_date format was used to make sure that the Collection date was interpretted properly.
+# See ?as.Date for more information and examples.
+
+# Below is a very handy way to eliminate those annoying spaces in the column names!
+names(BatData) <- make.names(names(BatData))
+
+```
+
+After you load the data, check that it has loaded correctly by checking the structure of the data frame. 
+The `str()` function is very useful for getting to know the structure of your data.
+
+```{r}
+
+```
+
+## select()
+
+The select() function can be used to select **columns** of a data frame that you want to focus on. Often you’ll have a large data frame containing “all” of the data, but any given analysis might only use a subset of variables or observations. The select() function allows you to get the few columns you might need.
+
+Suppose we wanted to take the first 3 columns only. There are a few ways to do this. We could for example use numerical indices. But we can also use the names directly.
+
+```{r}
+names(BatData)[1:3]
+BatData.subset <- dplyr::select(BatData, Field.number:Season)
+head(BatData.subset)
+```
+
+Note that the : normally cannot be used with names or strings, but inside the select() function you can use it to specify a range of variable names.
+You can also omit variables using the select() function by using the negative sign. With select() you can do
+`select(BatData, -(Collection.date:Season))`
+
+If you don't specify which select function to use and you have more than one package with a select function, then you will generate an error.
+Thanks to the "conflicted" package, that error is informative and tells you how to fix it.
+You can see that we specified the package to use by 'dplyr::select'. 
+
+The select() function also allows a special syntax that allows you to specify variable names based on patterns. 
+So, for example, if you wanted to keep every variable that ends with a “2”, we could use `subset <- select(chicago, ends_with("2"))`
+
+Use select() to make a new BatData.subset that only contains the Field number, Season, Class, Forearm length (FA length), and Mass for each bat.
+
+```{r}
+
+```
+
+## filter()
+
+The filter() function is used to extract subsets of **rows** from a data frame. This function is similar to the existing subset() function in R but is quite a bit faster.
+
+Suppose we wanted to extract the rows where the Mass of the bat was less than 55 g, which may indicate that the bat is a juvenile or subadult.
+
+```{r}
+BatData.filter <- filter(BatData, Mass < 55)
+str(BatData.filter)
+```
+
+There are only 41 bats in this filtered list. Use summary() to compare the Masses of this group of bats to those of the entire set.
+
+```{r}
+
+```
+
+You could also use filter to select based on more complex logical sequences using the & operator (or other logical operators). 
+Compare the number of male bats that are under 55 g to the number of female bats that are under 55 g using the filter() function.
+
+```{r}
+
+```
+
+## arrange()
+
+The arrange() function is used to reorder rows of a data frame according to one of the variables/columns. Reordering rows of a data frame (while preserving corresponding order of other columns) is normally a pain to do in R. The arrange() function simplifies the process quite a bit.
+
+Here we can order the rows of the data frame by date, so that the first row is the earliest (oldest) observation and the last row is the latest (most recent) observation.
+
+```{r}
+BatData <- arrange(BatData, Collection.date)
+head(select(BatData, Field.number:Class))
+tail(select(BatData, Field.number:Class))
+```
+
+Columns could also be arranged in descending order: `arrange(BatData, desc(Collection.date))`
+
+## rename()
+
+Renaming a variable in a data frame in R is surprisingly hard to do! The rename() function is designed to make this process easier.
+The first column of our data frame is the Id number that was given to each bat in the field.
+The syntax inside the rename() function is to have the new name on the left-hand side of the = sign and the old name on the right-hand side.
+
+```{r}
+BatData <- rename(BatData, Id = Field.number)
+head(select(BatData, Id:Class))
+```
+
+That's nicer!
+
+## mutate()
+
+The mutate() function exists to compute transformations of variables in a data frame. 
+Often, you want to create new variables that are derived from existing variables and mutate() provides a clean interface for doing that.
+
+For example, we can use Forearm length and Mass to calculate a body condition index (BCI) that will help us measure if a bat has a lower than usual Mass for its size. 
+
+```{r}
+BatData <- mutate(BatData, BCI = Mass / FA.length)
+summary(BatData$BCI)
+```
+
+Use the other two lengths that were measured (total body length and hind foot length) to calculate alternative BCIs. 
+
+```{r}
+
+```
+
+There is also the related transmute() function, which does the same thing as mutate() but then drops all non-transformed variables.
+
+## group_by()
+
+The group_by() function is used to generate summary statistics from the data frame within strata defined by a variable.
+For this dataset, the column *class* can be used to segregate the bats by sex, age, and reproductive status.
+In conjunction with the group_by() function we often use the summarize() function.
+The group_by() is VERY valuable for making statistical comparisons or visual comparisons between groups.
+
+```{r}
+BatClasses <- group_by(BatData, Class)
+summarize(BatClasses, Mass=mean(Mass, na.rm = TRUE), BCI=mean(BCI, na.rm = TRUE))
+```
+
+## Pipelines
+
+The output of one verb can be used by another verb in a **pipeline**. The pipeline is indicated by the pipe operator: `%>%`.
+Pipelines can be used even if only a single verb is needed. 
+For example, the code `filter(BatData, Mass < 55)` can be rewritten as: `BatData %>% filter(Mass < 55)` 
+
+The pipeline operater %>% is very handy for stringing together multiple dplyr functions in a sequence of operations. 
+Notice above that every time we wanted to apply more than one function, the sequence gets buried in a sequence of nested function calls that is difficult to read: 
+`third(second(first(x)))`
+This nesting is not a natural way to think about a sequence of operations. 
+The %>% operator allows you to string operations in a left-to-right fashion:
+`first(x) %>% second %>% third`
+or even:
+`x %>% first %>% second %>% third`
+
+The example from the previous code chunk can be expressed more clearly using a pipeline:
+
+```{r}
+BatData %>% 
+  group_by(Class) %>%
+  summarize(Mass=mean(Mass, na.rm = TRUE), BCI=mean(BCI, na.rm = TRUE))
+```
+
+This way we don’t have to create a set of temporary variables along the way or create a massive nested sequence of function calls.
+Notice in the above code that I pass the BatData data frame to the first call to group_by(), but then afterwards I do not have to pass the first argument to summarize(). 
+Once you travel down the pipeline with %>%, the first argument is taken to be the output of the previous element in the pipeline.
+
+Use a pipeline to compare Mass and BCI of each of the Classes of bat in each Season. 
+(Hint: group_by can accept more than one Name)
+
+```{r}
+
+```
+
+## Summary
+
+The dplyr package provides a concise set of operations for managing data frames. 
+With these functions we can do a number of complex operations in just a few lines of code. 
+In particular, we can often conduct the beginnings of an exploratory analysis with the powerful combination of group_by() and summarize().
+Because it is also part of the tidyverse, you can also use pipelines to feed data to *ggplot2*!

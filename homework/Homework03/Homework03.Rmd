@@ -1,0 +1,77 @@
+---
+title: "Homework 03"
+author: "Biology Student"
+date: "02/03/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Homework 3
+Due at noon on 12 Feb 2020.
+
+## Loading Libraries
+Use the following syntax to load any libraries that you need. This code will prevent errors that will interfere with knitting of the Rmd file.
+Also note that the `include=FALSE` option will prevent this code chunk from appearing in the markdown file.
+
+First we will load the "conflicted" library. This will help us identify any problems with packages that we use.
+
+We will then load the entire tidyverse library, which includes *dplyr*, *ggplot2*, *readr*, and other packages.
+
+```{r Load Libraries, include=FALSE}
+if (!require("conflicted")) install.packages("conflicted"); library(conflicted)
+# Load other packages here.
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+```
+
+# Exploratory Data Analysis Checklist
+
+Follow Chapter 5 from *Exploratory Data Analysis with R* (https://leanpub.com/exdata/read_full) by Roger D. Peng to explore one of the following datasets:
+- Uganda Bat Dataset from Lab 4
+- NHANES Dataset from Lab 3
+
+```{r Load Data}
+if (!require("NHANES")) install.packages("NHANES"); library(NHANES)
+data("NHANES")
+BatData <- read_csv("UgandaBatsFilteredMetrics.csv", 
+    col_types = cols(`Collection date` = col_date(format = "%m/%d/%y")))
+```
+
+Remember to edit the Rmd to remove any irrelevant code for your assignment.
+
+## Formulate your question
+
+Always formulate your question(s) *before* you begin analyzing the data. 
+(But you may look at the names of the variables measured to see what questions are possible.)
+
+## Read in your data
+
+## Check the packaging
+
+Validate that the data file is complete and properly loaded.
+
+## Run str()
+
+Fix any problems that you find.
+
+## Look at the top and the bottom of your data
+
+## Check your “n”s
+
+## Validate with at least one external data source
+
+## Try the easy solution first
+
+## Challenge your solution
+
+## Follow up
+
+# Analytic Graphics
+
+Follow Section 6.1 and 6.2 to visualize the comparisons that were essential to answering the question.
+
+## Show comparisons
+
+## Show causality, mechanism, explanation, systematic structure
