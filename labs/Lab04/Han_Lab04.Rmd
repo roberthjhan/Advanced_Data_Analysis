@@ -235,7 +235,6 @@ Use a pipeline to compare Mass and BCI of each of the Classes of bat in each Sea
 BatData %>%
   group_by(Class, Season) %>%
   dplyr::summarize(Mass=mean(Mass, na.rm = TRUE), BCI=mean(BCI, na.rm = TRUE))
-  
 ```
 
 ## Summary
