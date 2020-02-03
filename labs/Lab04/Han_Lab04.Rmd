@@ -1,6 +1,6 @@
 ---
 title: "Lab 04"
-author: "Biology Student"
+author: "Robert Han"
 date: "02/02/2020"
 output: github_document
 ---
@@ -21,6 +21,7 @@ We will then load the entire tidyverse library, which includes *dplyr*, *ggplot2
 if (!require("conflicted")) install.packages("conflicted"); library(conflicted)
 # Load other packages here.
 if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+if (!require("UsingR")) install.packages("UsingR"); library(UsingR)
 ```
 
 ## Objectives for Lab 4
@@ -77,7 +78,7 @@ After you load the data, check that it has loaded correctly by checking the stru
 The `str()` function is very useful for getting to know the structure of your data.
 
 ```{r}
-
+str(BatData)
 ```
 
 ## select()
@@ -88,17 +89,19 @@ Suppose we wanted to take the first 3 columns only. There are a few ways to do t
 
 ```{r}
 names(BatData)[1:3]
-BatData.subset <- dplyr::select(BatData, Field.number:Season)
+BatData.subset <- dplyr::select(BatData, Field.number:Season) #show only field number to season (range of variable names)
+BatData1.subset <- dplyr::select(BatData, -(Collection.date:Season)) #show all except collection date to season
 head(BatData.subset)
+head(BatData1.subset)
 ```
 
 Note that the : normally cannot be used with names or strings, but inside the select() function you can use it to specify a range of variable names.
 You can also omit variables using the select() function by using the negative sign. With select() you can do
 `select(BatData, -(Collection.date:Season))`
 
-If you don't specify which select function to use and you have more than one package with a select function, then you will generate an error.
-Thanks to the "conflicted" package, that error is informative and tells you how to fix it.
-You can see that we specified the package to use by 'dplyr::select'. 
+If you don't specify which select function to use and you have more than one package with a select function, then you 
+will generate an error. Thanks to the "conflicted" package, that error is informative and tells you how to fix it.
+You can see that we specified the package to use by 'dplyr::select'. <------------------------------------Specify package to use when multiple with same name exist
 
 The select() function also allows a special syntax that allows you to specify variable names based on patterns. 
 So, for example, if you wanted to keep every variable that ends with a “2”, we could use `subset <- select(chicago, ends_with("2"))`
@@ -106,7 +109,9 @@ So, for example, if you wanted to keep every variable that ends with a “2”, 
 Use select() to make a new BatData.subset that only contains the Field number, Season, Class, Forearm length (FA length), and Mass for each bat.
 
 ```{r}
-
+BatData.subset <- dplyr::select(BatData, Field.number:Season)
+BatData2.subset <- dplyr::select(BatData, Field.number:Mass, -(Collection.date), -(Sex), -(Elevation:Ear), (FA.length:Mass))
+head(BatData2.subset)
 ```
 
 ## filter()
@@ -116,21 +121,24 @@ The filter() function is used to extract subsets of **rows** from a data frame. 
 Suppose we wanted to extract the rows where the Mass of the bat was less than 55 g, which may indicate that the bat is a juvenile or subadult.
 
 ```{r}
-BatData.filter <- filter(BatData, Mass < 55)
+BatData.filter <- dplyr::filter(BatData, Mass < 55)
 str(BatData.filter)
 ```
 
 There are only 41 bats in this filtered list. Use summary() to compare the Masses of this group of bats to those of the entire set.
 
 ```{r}
-
+summary(BatData.filter)
 ```
 
 You could also use filter to select based on more complex logical sequences using the & operator (or other logical operators). 
 Compare the number of male bats that are under 55 g to the number of female bats that are under 55 g using the filter() function.
 
 ```{r}
-
+BatData.filter.male.U55 <- dplyr::filter(BatData, Mass < 55, Sex == "Male")
+BatData.filter.female.U55 <- dplyr::filter(BatData, Mass < 55, Sex == "Female")
+summary(BatData.filter.male.U55)
+summary(BatData.filter.female.U55)
 ```
 
 ## arrange()
@@ -140,9 +148,9 @@ The arrange() function is used to reorder rows of a data frame according to one 
 Here we can order the rows of the data frame by date, so that the first row is the earliest (oldest) observation and the last row is the latest (most recent) observation.
 
 ```{r}
-BatData <- arrange(BatData, Collection.date)
-head(select(BatData, Field.number:Class))
-tail(select(BatData, Field.number:Class))
+BatData <- dplyr::arrange(BatData, Collection.date)
+head(dplyr::select(BatData, Field.number:Class))
+tail(dplyr::select(BatData, Field.number:Class))
 ```
 
 Columns could also be arranged in descending order: `arrange(BatData, desc(Collection.date))`
@@ -155,7 +163,7 @@ The syntax inside the rename() function is to have the new name on the left-hand
 
 ```{r}
 BatData <- rename(BatData, Id = Field.number)
-head(select(BatData, Id:Class))
+head(dplyr::select(BatData, Id:Class))
 ```
 
 That's nicer!
@@ -174,8 +182,9 @@ summary(BatData$BCI)
 
 Use the other two lengths that were measured (total body length and hind foot length) to calculate alternative BCIs. 
 
-```{r}
-
+```{r n}
+BatData <- mutate(BatData, BCI2 = Total.Length / Hind.Foot) #(BCI2 = body length/hind foot length)
+summary(BatData$BCI2)
 ```
 
 There is also the related transmute() function, which does the same thing as mutate() but then drops all non-transformed variables.
@@ -189,7 +198,7 @@ The group_by() is VERY valuable for making statistical comparisons or visual com
 
 ```{r}
 BatClasses <- group_by(BatData, Class)
-summarize(BatClasses, Mass=mean(Mass, na.rm = TRUE), BCI=mean(BCI, na.rm = TRUE))
+dplyr::summarize(BatClasses, Mass=mean(Mass, na.rm = TRUE), BCI=mean(BCI, na.rm = TRUE))
 ```
 
 ## Pipelines
