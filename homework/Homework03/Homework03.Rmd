@@ -1,6 +1,6 @@
 ---
 title: "Homework 03"
-author: "Biology Student"
+author: "Robert Han"
 date: "02/03/2020"
 output: github_document
 ---
