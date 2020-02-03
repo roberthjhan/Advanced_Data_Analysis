@@ -1,0 +1,439 @@
+---
+title: "Homework 02"
+output: github_document
+author: "Robert Han"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!require("UsingR")) install.packages("UsingR"); library(UsingR)
+if (!require("cowplot")) install.packages("cowplot"); library(cowplot)
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+if (!require("dplyr")) install.packages("dplyr"); library(dplyr)
+if (!require("e1071")) install.packages("e1071"); library(e1071)
+if (!require("gplots")) install.packages("gplots"); library(gplots) 
+if (!require("reshape2")) install.packages("reshape2"); library(reshape2) 
+```
+
+## The Pick et al. Dataset
+The dataset that you will be exploring will be found in the Homework02 folder.
+It was downloaded from the Dryad Data Repository at:
+https://doi.org/10.5061/dryad.40jp4
+The paper describing the analysis of this data can be found here:
+https://doi.org/10.1086/688918
+
+**Disentangling Genetic and Prenatal Maternal Effects on Offspring Size and Survival**
+Joel L. Pick, Christina Ebneter, Pascale Hutter, and Barbara Tschirren
+*The American Naturalist* 2016 188:6, 628-639
+
+Data of body mass, size and survival throughout development of Japanese quail chicks originating from reciprocal crosses of divergent artificial selection lines for prenatal maternal investment
+```{r Importing Data}
+quail <- read_csv("pick_et_al.csv", trim_ws = TRUE)
+head(quail)
+```
+
+The following description of the data was also provided:
+Column Name - Description
+"animal" - offspring ID XXXXXXXXXXXXX
+"mother" - maternal ID XXXXXXXXXXXXXX
+"father" - paternal ID XXXXXXXXXXXXXXX
+"hatch.mass" - offspring hatchling mass (g)
+"week2.mass" - offspring week 2 mass (g)
+"week2.tarsus" - offspring week 2 tarsus length (mm)
+"week4.mass" - offspring week 4 mass (g)
+"week4.tarsus" - offspring week 4 tarsus length (mm)
+"adult.tarsus" - offspring adult tarsus length (mm)
+"egg.mass" - egg mass (g) that offspring originated from
+"maternal.line" - selection line of the mother; H = high investment line, L = low investment line
+"paternal.line" - selection line of the father; H = high investment line, L = low investment line
+"sex" - offspring sex
+"replicate" - selection line replicate
+"hatching.day" - day of hatching (17 or 18) relative to start of incubation (day 0)
+"hatch.env" - hatching environment (specific incubator)
+"week2.env" - chick rearing environment (specific cage) from hatching to week 2
+"week4.env" - juvenile rearing environment (specific cage) from week 2 to week 4
+"survive" - survival to adulthood
+"exclude.surv" - whether individual was excluded from survival analysis or not (TRUE = excluded); see methods
+
+```{r Summary}
+summary(quail)
+```
+
+You can see that some of the data is categorical, but it is of the class "character". 
+We should change that to ensure that it these variables are handled properly during analysis.
+I have shown you how to do one of these, but you will need to complete this process, referring to the description of each variable.
+
+```{r Factoring data}
+library(dplyr)
+quail$sex <- as.factor(quail$sex)
+table(quail$sex)
+```
+
+Next explore the data to determine if variables look like they will need to be transformed or if they already have a normal distribution.
+Note the importance of testing for normality for each population separately. 
+
+```{r Data Exploration}
+simple.eda(quail$hatch.mass)
+shapiro.test(quail$hatch.mass)
+shapiro.test(quail$hatch.mass[quail$sex=="Female"])
+shapiro.test(quail$hatch.mass[quail$sex=="Male"])
+```
+
+```{r t Test}
+t.test(hatch.mass ~ sex, data = quail)
+```
+
+This shows us that hatch mass does depend on the sex of the chick.
+
+After exploring the dataset, formulate some additional tentative hypotheses that you wish to test.
+I have provided some examples of the types of graphs that you could consider. 
+You should alter these examples for your own use (and fix any issues that find.)
+
+```{r Data Visualization}
+
+ggplot(quail) +
+  aes(x = hatch.mass) +
+  geom_histogram(bins=100) +
+  theme_cowplot()
+
+ggplot(quail) +
+  aes(x = hatch.mass, color = sex, fill = sex) +
+  geom_histogram(binwidth = 0.5, position = "dodge") +
+  theme_cowplot()
+
+ggplot(quail) +
+  aes(x = hatch.mass,  fill = sex) + 
+  geom_density(alpha=.3) +
+  theme_cowplot()
+```
+
+There appears to be some other factors influencing the hatch mass, in addition to sex. 
+Explore the data and determine how to test a hypothesis about one of these other factors.
+
+-------------------------------------------------------------------------------------------------------------------
+New hypothesis: The investment of the parents influences chick mass.
+
+The data I want to explore in more detail uses the quantitative variables egg mass, hatch mass, and week2 mass.The 
+hatch mass variable has already been visualized so only egg mass and week2 mass are shown. The simple eda shows 
+both variables appear to be normal.
+```{r Data exploration}
+simple.eda(quail$`egg.mass`)
+summary(quail$`egg.mass`)
+simple.eda(quail$week2.mass)
+summary(quail$week2.mass)
+```
+
+Housekeeping for the categorical variables of interest. Recoded maternal and paternal lines as well as created a 
+new variable called "parents" which identifies parental investment crosses. Changed hatching day to factor.
+
+There are some NA values in the data which are removed for later visualizations.
+
+https://www.rdocumentation.org/packages/photobiology/versions/0.9.30/topics/na.omit
+Exploratory data analysis in R. Ch. 4.9 mutate()
+https://stackoverflow.com/questions/7201341/how-can-two-strings-be-concatenated
+https://www.math.ucla.edu/~anderson/rw1001/library/base/html/paste.html
+https://stackoverflow.com/questions/36615769/is-there-an-alternative-to-revalue-function-from-plyr-when-using-dplyr
+```{r Housekeeping}
+quail <- na.omit(quail) #remove NA
+
+m_line <- recode(quail$maternal.line, "H" = "Maternal high", "L" = "Maternal low")
+p_line <- recode(quail$paternal.line, "H" = "Paternal high", "L" = "Paternal low")
+parental_line = data.frame(m_line, p_line)
+summary(parental_line)
+
+quail <- mutate(quail, parents = paste(m_line, p_line, sep=" x "))
+table(quail$parents)
+
+quail$hatching.day <- as.factor(quail$hatching.day)
+table(quail$hatching.day)
+```
+
+Perhaps staying in the egg for an additional day allows a chick to grow more, or maybe it doesn't.
+We can't run a simple eda because the variable is no longer numeric but the table from before 
+tells us hatching day is very much weighted towards day 17. Taking a quick peek with a boxplot 
+reveals suggests there wasn't much difference in hatch mass based on what day the chick was born. 
+Visualizing the means also doesn't suggest a promising data exploration. So we're gonna scrap 
+that.
+```{r Quick look at hatch day and hatch mass}
+ggplot(quail) + 
+  aes(x = hatching.day, y = hatch.mass) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
+  guides(alpha=FALSE) +
+  xlab("Hatch day") + 
+  ylab("Hatch mass (g)") +
+  theme_cowplot()
+
+plotmeans(hatch.mass ~ hatching.day, data = quail, xlab = "Hatch day", ylab = "Hatch mass (g)")
+```
+
+
+To check the data that was selected shapiro tests were carried out. I thought using logic and for loops would make 
+the process easier but it got so gross so fast. 
+
+Looking at the results of the shapiro tests we can see several variables yielding p-values less than 0.05. The skew
+on these variables is for the most part between -0.5 and 0.5 which allows us to say the distribution is 
+apporximately symmetrical. Looking at the distribution of data with the simple eda we can see the data isn't 
+horrible. Both variables are right skewed and between -0.5 and 0.5; therefore we say the two are approximately 
+symmetrical (according to Brownmath.com) so we can probably ignore it. The greatest skew comes from looking at 
+Maternal low x Paternal high (hatch mass) which had p-value: 0.00607270038906764 and skew: -0.523814340748249. 
+Even so the skew is small enough that we can almost say it is approximately symmetrical.
+
+Distribution of the parental line data is well balanced
+
+p-value report:
+hatch mass
+
+ Maternal high p-value:  0.017188649785972
+ Maternal low p-value:  0.124122738179463
+ Paternal high p-value:  0.122927108707938
+ Paternal low p-value:  0.00172976930963811
+ Maternal high x Paternal low p-value:  0.22400832115948
+ Maternal low x Paternal high p-value:  0.00607270038906764
+ Maternal low x Paternal low p-value:  0.0730605593584457
+
+egg mass
+
+ Maternal high p-value:  0.163379596841482
+ Maternal low p-value:  0.0591312769918625
+ Paternal high p-value:  0.141950593175119
+ Paternal low p-value:  0.00316749563148435
+ Maternal high x Paternal high p-value:  0.24063069078182
+ Maternal high x Paternal low p-value:  0.190064322294475
+ Maternal low x Paternal high p-value:  0.0138178345042709
+ Maternal low x Paternal low p-value:  0.200543219527835
+
+https://brownmath.com/stat/shape.htm
+https://www.datamentor.io/r-programming/for-loop/
+https://www.datamentor.io/r-programming/if-else-statement/
+https://stackoverflow.com/questions/9317830/r-do-i-need-to-add-explicit-new-line-character-with-print/9317914
+```{r Checking out the variables}
+m_p <- c("Maternal", "Paternal")
+l_h <- c("high", "low")
+parentz <- c("Maternal high x Paternal high", "Maternal high x Paternal low", "Maternal low x Paternal high", "Maternal low x Paternal low")
+
+cat("hatch mass\n")
+for (a in m_p){
+  for (b in l_h){
+    name = paste(a, b)
+    if (a == "Maternal") 
+      {shap = shapiro.test(quail$hatch.mass[m_line==name])$p.value 
+      cat(paste("\n", name, "p-value: ", shap))
+      if (shap < 0.05) 
+        {cat(paste("\n", "    ^^ skew: ", skewness(quail$hatch.mass[m_line==name])))}}
+    else if (a == "Paternal") {shap = shapiro.test(quail$hatch.mass[p_line==name])$p.value
+    cat(paste("\n", name, "p-value: ", shap))
+      if (shap < 0.05) 
+        {cat(paste("\n", "   ^^ skew: ", skewness(quail$hatch.mass[p_line==name])))}}
+    }
+  }
+
+for (val in parentz){
+  shap = shapiro.test(quail$hatch.mass[quail$parents==val])$p.value
+  cat(paste("\n",val, "p-value: ", shap))
+  if (shap < 0.05) 
+    {cat(paste("\n    ^^ skew: ", skewness(quail$hatch.mass[quail$parents==val])))}
+  }
+
+cat("\n\negg mass\n")
+for (a in m_p){
+  for (b in l_h){
+    name = paste(a, b)
+    if (a == "Maternal") 
+      {shap = shapiro.test(quail$egg.mass[m_line==name])$p.value 
+      cat(paste("\n", name, "p-value: ", shap))
+      if (shap < 0.05) 
+        {cat(paste("\n", "    ^^ skew: ", skewness(quail$egg.mass[m_line==name])))}}
+    else if (a == "Paternal") {shap = shapiro.test(quail$egg.mass[p_line==name])$p.value
+    cat(paste("\n", name, "p-value: ", shap))
+      if (shap < 0.05) 
+        {cat(paste("\n", "   ^^ skew: ", skewness(quail$egg.mass[p_line==name])))}}
+    }
+  }
+
+for (val in parentz){
+  shap = shapiro.test(quail$egg.mass[quail$parents==val])$p.value
+  cat(paste("\n",val, "p-value: ", shap))
+  if (shap < 0.05) 
+  {cat(paste("\n    ^^ skew: ", skewness(quail$egg.mass[quail$parents==val])))}
+    }
+
+cat("\n\n")
+table(m_line)
+table(p_line)
+table(quail$parents)
+```
+
+Boxplots were created to better see the individual effects of parental lines on hatch mass. We can see from the 
+boxplots and plotted means that maternal investment appears to contribute the most to hatch mass. The difference in
+mean hatch mass is negligible when we look at the paternal line. Similar observations were made for the egg mass.
+```{r Boxplots and mean comparison of hatch mass by parental line}
+ggplot(quail) + 
+  aes(x = m_line, y = hatch.mass) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "red") +
+  guides(alpha=FALSE) +
+  xlab("Maternal line") + 
+  ylab("Hatch mass (g)") +
+  theme_cowplot()
+
+ggplot(quail) + 
+  aes(x = p_line, y = hatch.mass) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
+  guides(alpha=FALSE) +
+  xlab("Paternal line") + 
+  ylab("Hatch mass (g)") +
+  theme_cowplot()
+
+plotmeans(hatch.mass ~ m_line, data = quail, xlab = "Maternal line", ylab = "Hatch mass (g)")
+plotmeans(hatch.mass ~ p_line, data = quail, xlab = "Paternal line", ylab = "Hatch mass (g)")
+
+ggplot(quail) + 
+  aes(x = m_line, y = egg.mass) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "red") +
+  guides(alpha=FALSE) +
+  xlab("Maternal line") + 
+  ylab("Egg mass (g)") +
+  theme_cowplot()
+
+ggplot(quail) + 
+  aes(x = p_line, y = egg.mass) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
+  guides(alpha=FALSE) +
+  xlab("Paternal line") + 
+  ylab("Egg mass (g)") +
+  theme_cowplot()
+
+plotmeans(egg.mass ~ m_line, data = quail, xlab = "Maternal line", ylab = "Egg mass (g)")
+plotmeans(egg.mass ~ p_line, data = quail, xlab = "Paternal line", ylab = "Egg mass (g)")
+```
+
+T-tests were used to test the significance of the difference in means between high and low parental investments. 
+Unsurprisingly the the difference between high and low investment in the maternal lines was significant for both 
+hatch mass and egg mass (p = 2.2e-16 and 2.2e-16 respectively). The difference between paternal lines was not 
+significant for both hatch mass and egg mass (p = 0.3083 and 0.229 respectively). 
+```{r t-test}
+t.test(hatch.mass ~ m_line, data = quail)
+t.test(hatch.mass ~ p_line, data = quail)
+t.test(egg.mass ~ m_line, data = quail)
+t.test(egg.mass ~ p_line, data = quail)
+```
+
+Boxplots and plots of means were used to visualize the combined effects of parental lines (maternal and paternal). 
+I really thought this would be a coolthing to visualize but it's just repeating or reaffirming the last set of 
+boxplots. Anyways, maternal investment is suggested to be a dominating factor in both egg mass and hatch mass.
+
+```{r Boxplots and mean comparison of parental investment by parental crosses}
+ggplot(quail) + 
+  aes(x = parents, y = hatch.mass) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
+  guides(alpha=FALSE) +
+  xlab("Parent cross") + 
+  ylab("Hatch mass (g)") +
+  theme_cowplot() + 
+  theme(axis.text.x = element_text(angle = 30)) 
+
+ggplot(quail) + 
+  aes(x = parents, y = egg.mass) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
+  guides(alpha=FALSE) +
+  xlab("Parent cross") + 
+  ylab("Egg mass (g)") +
+  theme_cowplot() + 
+  theme(axis.text.x = element_text(angle = 30)) 
+  
+plotmeans(hatch.mass ~ parents, data = quail, xlab = "Parents", ylab = "Hatch mass (g)")
+plotmeans(egg.mass ~ parents, data = quail, xlab = "Parents", ylab = "Egg mass (g)")
+```
+
+ANOVA confirms the conclusions made from the boxplots and plots of means. There are significant differences in the
+means of different populations. With p-values < 0.05 for hatch mass and egg mass (p = 2e-16 for both). 
+Going further with the Tukey test it's made even more clear that maternal factors have the greatest influence on
+early mass. 
+
+Hatch mass:Maternal high x Paternal low-Maternal high x Paternal high p = 0.4050669, 
+Maternal low x Paternal low-Maternal low x Paternal high p = 0.9911414. 
+Egg mass: Maternal high x Paternal low-Maternal high x Paternal high p = 0.2087676,
+Maternal low x Paternal low-Maternal low x Paternal high p = 0.9936364.
+
+The high p-values indicate statistically insignificant differences between the populations where the Maternal line 
+is the same. 
+
+http://www.sthda.com/english/wiki/one-way-anova-test-in-r
+```{r}
+cat("Hatch mass")
+hatch.aov <- aov(hatch.mass ~ parents, data = quail)
+summary(hatch.aov)
+TukeyHSD(hatch.aov)
+
+cat("\nEgg mass")
+
+egg.aov <- aov(egg.mass ~ parents, data = quail)
+summary(egg.aov)
+TukeyHSD(egg.aov)
+```
+
+Originally I was trying to help Fallon figure out a way to visualize multiple boxplots of different y-values in a 
+single figure. This was not what she wanted but it looks cool so it stays. The egg and hatch mass boxplots are 
+nothing new but looking at the week 2 mass suggests regardless of the chick's parentage, they seem to approach a 
+similar mass. In other words, it may be that parental investment has the most impact around hatching. As time goes 
+on the effect of parental investment on mass is less pronounced.
+
+https://stackoverflow.com/questions/14785530/ggplot-boxplot-of-multiple-column-values
+https://stackoverflow.com/questions/14604439/plot-multiple-boxplot-in-one-graph
+https://www.rdocumentation.org/packages/mudata/versions/0.1.1/topics/id.vars
+```{r Boxplot of egg, hatch, and week 2 mass}
+mass <- melt(quail, id.vars='parents', measure.vars= c('egg.mass','hatch.mass', 'week2.mass'))
+ggplot(mass) +
+      geom_boxplot(aes(x = parents, y = log(value), color = variable)) + 
+      xlab("Parent cross") +
+      ylab("log10 mass (g)") +
+      theme_cowplot() + 
+      theme(axis.text.x = element_text(angle = 30)) 
+```
+
+Egg and hatch mass are very likely dependent variables but we can use the two to see the relationship between chick
+mass and parental investment in another way. From the scatterplot we can confirm again that the individuals with
+the greatest egg and hatch mass are those with high maternal investment. 
+```{r Scatterplot egg mass x hatch mass}
+ggplot(quail) + 
+  aes(y = (hatch.mass), x = (egg.mass)) + 
+  theme(legend.position = c(0.05, 0.8)) +
+  geom_point(aes(colour = parents), alpha = 0.5) +
+  geom_smooth(method=lm , colour="black", se=TRUE) +
+  ylab("Hatch mass (g)") + 
+  xlab("Egg mass (g)") +
+  theme_cowplot()
+```
+The p-value for linear regression is well below 0.05 (p = 2.2e-16). 
+```{r Statistics on linear regression}
+egg_mass_fit = lm((egg.mass)~(hatch.mass), data=quail)
+summary(egg_mass_fit)
+```
+
+Out of curiosity I wondered if the egg itself was something that also differed in mass. To investigate this 
+question I created a new variable called just_the_egg which was the result of subtracting the hatch mass from the 
+egg mass. The variable was plotted as a boxplot and plot of means with respect to parental line cross and suggests that maternal investment is the deciding factor for just the egg as well.
+```{r Just the egg}
+quail <- mutate(quail, just_the_egg = (egg.mass - hatch.mass))
+
+ggplot(quail) + 
+  aes(x = parents, y = just_the_egg) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
+  guides(alpha=FALSE) +
+  xlab("Parental cross") + 
+  ylab("just_the_egg mass (g)") +
+  theme_cowplot() + 
+  theme(axis.text.x = element_text(angle = 30)) 
+
+plotmeans(hatch.mass ~ parents, data = quail, xlab = "Parents", ylab = "just_the_egg mass (g)")
+```
+
+
+https://twitter.com/CMastication/status/1142832452890759169/photo/1
