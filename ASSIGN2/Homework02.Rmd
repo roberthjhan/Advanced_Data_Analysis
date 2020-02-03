@@ -15,7 +15,6 @@ if (!require("gplots")) install.packages("gplots"); library(gplots)
 if (!require("reshape2")) install.packages("reshape2"); library(reshape2) 
 ```
 
-
 ## The Pick et al. Dataset
 The dataset that you will be exploring will be found in the Homework02 folder.
 It was downloaded from the Dryad Data Repository at:
