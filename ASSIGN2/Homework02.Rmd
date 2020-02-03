@@ -28,7 +28,6 @@ Joel L. Pick, Christina Ebneter, Pascale Hutter, and Barbara Tschirren
 
 Data of body mass, size and survival throughout development of Japanese quail chicks originating from reciprocal crosses of divergent artificial selection lines for prenatal maternal investment
 
-
 ```{r Importing Data}
 quail <- read_csv("pick_et_al.csv", trim_ws = TRUE)
 head(quail)
