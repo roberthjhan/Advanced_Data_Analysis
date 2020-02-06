@@ -32,12 +32,32 @@ Follow Chapter 5 from *Exploratory Data Analysis with R* (https://leanpub.com/ex
 - Uganda Bat Dataset from Lab 4
 - NHANES Dataset from Lab 3
 
+
+Loading in the data is the first step. The Uganda Bat Dataset is loaded in from a .csv file in the working
+directory. A line of code is also run so that the date format used in the data is correctly represented in R.
 ```{r Load Data}
 if (!require("NHANES")) install.packages("NHANES"); library(NHANES)
 data("NHANES")
 BatData <- read_csv("UgandaBatsFilteredMetrics.csv", 
     col_types = cols(`Collection date` = col_date(format = "%m/%d/%y")))
 ```
+
+
+Running the summary function on the data we see we have 103 observations, 5 categorical variables (Collection.data, Season, Sex, Class, and Habitat description), and 6 continuous variables (Elevation, Total.Length, Hind.Foot, Ear, FA.length, and Mass).
+```{r Summary of Bat Data, echo = FALSE}
+str(BatData)
+```
+
+```{r}
+ggplot(BatData) +
+  aes(x = Elevation, y = Mass, color = Sex) +
+  geom_point() +
+  theme_cowplot()
+
+
+
+```
+
 
 Remember to edit the Rmd to remove any irrelevant code for your assignment.
 

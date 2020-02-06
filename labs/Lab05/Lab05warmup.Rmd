@@ -1,0 +1,95 @@
+---
+title: "Lab 05 Warmup"
+author: "Prof. Ken Field, Bucknell University"
+date: "2/10/2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Load Libraries, include=FALSE}
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+```
+
+## Loading Data
+
+Scientists have been asked to investigate whether jelly beans cause acne. 
+They enrolled 200 high school students in a study where the control group (n=100) avoided all jellybeans for 2 months.
+The treatment group (n=100) were given a free bag of jellybeans every week and were told to consume all of them before the next week.
+At the end of the study, the acne level of each participant was scored.
+
+```{r}
+acne <- read.csv("../04-Data/acne.csv")
+```
+
+## Statistical Test
+
+The scientists determined that there was no link between jelly beans and acne.
+
+```{r}
+t.test(Score ~ Group, data = acne)
+ggplot(acne, aes(x=Group, y=Score)) + 
+  geom_boxplot()
+```
+
+But people are skeptical and think that it might not be all jellybeans, but only those of a certain color.
+So the scientists stop playing Minecraft long enough to conduct a second study. 
+This time they have a control group (n=10) and twenty groups (n=10 per group) that each eat bags of only a single color of jellybean.
+
+```{r}
+acne2 <- read.csv("../04-Data/acne2.csv")
+
+# a for loop probably would have been better!
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "purple"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "brown"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "pink"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "blue"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "teal"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "salmon"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "red"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "turquoise"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "magenta"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "yellow"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "grey"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "tan"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "cyan"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "green"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "mauve"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "beige"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "lilac"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "black"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "peach"))
+t.test(Score ~ Color, data = filter(acne2, Color == "control" | Color == "orange"))
+```
+
+## Whoa
+
+```{r}
+ggplot(filter(acne2, Color == "control" | Color == "green"), aes(x=Color, y=Score)) + 
+  geom_boxplot()
+```
+
+https://xkcd.com/882/
+
+## Behind the numbers
+
+Both acne datasets were generated using a random normal distribution.
+```{r}
+acne <- data.frame(round(rnorm(200,10,5)))
+names(acne) = c("Score")
+acne$Group <- c(rep("control", each=100), rep("jellybeans", each=100))
+
+jellybeans = c("control","purple","brown","pink","blue","teal",
+               "salmon","red","turquoise","magenta","yellow",
+               "grey","tan","cyan","mauve","beige",
+               "green","lilac","black","peach","orange")
+
+acne2 <- data.frame(round(rnorm(210,10,5)))
+names(acne2) = c("Score")
+acne2$Color <- c(rep(jellybeans, each=10))
+```
+
+  
+  
