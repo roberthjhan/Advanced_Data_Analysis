@@ -24,6 +24,10 @@ We will then load the entire tidyverse library, which includes *dplyr*, *ggplot2
 if (!require("conflicted")) install.packages("conflicted"); library(conflicted)
 # Load other packages here.
 if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+if (!require("cowplot")) install.packages("cowplot"); library(cowplot)
+if (!require("NHANES")) install.packages("NHANES"); library(NHANES)
+if (!require("gplots")) install.packages("gplots"); library(gplots) 
+if (!require("corrplot")) install.packages("corrplot"); library(corrplot)
 ```
 
 # Exploratory Data Analysis Checklist
@@ -33,35 +37,54 @@ Follow Chapter 5 from *Exploratory Data Analysis with R* (https://leanpub.com/ex
 - NHANES Dataset from Lab 3
 
 
-Loading in the data is the first step. The Uganda Bat Dataset is loaded in from a .csv file in the working
-directory. A line of code is also run so that the date format used in the data is correctly represented in R.
-```{r Load Data}
-if (!require("NHANES")) install.packages("NHANES"); library(NHANES)
+Loading in the data is the first step. "This is survey data collected by the US National Center for Health 
+Statistics (NCHS) which has conducted a series of health and nutrition surveys since the early 1960’s. 
+Since 1999 approximately 5,000 individuals of all ages are interviewed in their homes every year and complete the 
+health examination component of the survey. The health examination is conducted in a mobile examination
+center (MEC)" (Lab03 description). This dataset includes data from two years (2009-10 & 2010-11)
+
+According to what's been read in, we can expect 10,000 rows of data, with several rows having at least one NA value, and 76 columns or variables.
+```{r NHANES}
 data("NHANES")
-BatData <- read_csv("UgandaBatsFilteredMetrics.csv", 
-    col_types = cols(`Collection date` = col_date(format = "%m/%d/%y")))
+str(NHANES)
+#help(NHANES) #information
+nrow(NHANES)
+ncol(NHANES)
+```
+
+```{r Summary of NHANES dataset, include=FALSE}
+summary(NHANES)
+```
+
+Looking at the head and tail of the dataset we see several NA's indicating we may need to run an NA removal
+function at some point. 
+```{r Peeksie at the data}
+head(NHANES)
+tail(NHANES)
 ```
 
 
-Running the summary function on the data we see we have 103 observations, 5 categorical variables (Collection.data, Season, Sex, Class, and Habitat description), and 6 continuous variables (Elevation, Total.Length, Hind.Foot, Ear, FA.length, and Mass).
-```{r Summary of Bat Data, echo = FALSE}
-str(BatData)
-```
-
-```{r}
-ggplot(BatData) +
-  aes(x = Elevation, y = Mass, color = Sex) +
-  geom_point() +
-  theme_cowplot()
 
 
 
-```
+
+
+
 
 
 Remember to edit the Rmd to remove any irrelevant code for your assignment.
 
 ## Formulate your question
+
+
+Question: Recently I came across a subreddit called r/EOOD, or exercise out of depression. We've all heard of the 
+"runners high" but can physical activity really reduce depression?
+
+
+
+
+
+
 
 Always formulate your question(s) *before* you begin analyzing the data. 
 (But you may look at the names of the variables measured to see what questions are possible.)
@@ -80,18 +103,238 @@ Fix any problems that you find.
 
 ## Check your “n”s
 
-## Validate with at least one external data source
+################################################################## Validate with at least one external data source
+
 
 ## Try the easy solution first
+```{r Get subset of NHANES, include = FALSE}
+NHANES_adult <- subset(NHANES, (Age >21)) #subset the full dataset
+NHANES_adult <- drop_na(NHANES_adult, LittleInterest) 
+NHANES_adult <- drop_na(NHANES_adult, Depressed) 
+NHANES_adult <- drop_na(NHANES_adult, PhysActive) #NA removal
+NHANES_adult <- drop_na(NHANES_adult, Testosterone) 
+NHANES_adult <- drop_na(NHANES_adult, SleepHrsNight) 
+```
+
+To visualize the relationship between physical activity and depression, we can take a look at the Depressed and
+PhysActive variables. Both variables are categorical so we'll take a look at counts in a barchart.
+
+It kind of looks like the ratio of "No" to "Yes" (Physically Active) increases with the Depressed variable. To get
+a better look we can use the same data to build a percent stacked barchart. Checking that out, we can see the
+percentage of people that are not physically active is greatest in the depressed most days category, and the
+opposite is true for the depressed "None" days.
+```{r EZ comparison}
+ggplot(NHANES_adult) +
+  aes(x = Depressed, fill = PhysActive, na.rm = TRUE) + 
+  geom_bar(position = "dodge") +
+  theme_cowplot()
+
+ggplot(NHANES_adult) +
+  aes(x = Depressed, fill = PhysActive, na.rm = TRUE) + 
+  geom_bar(position = "fill") +
+  ylab("Percent") +
+  theme_cowplot()
+```
+
+Seeing as little interest can be a symptom of depression we can do the same visualizations for the variable
+LittleINterest and PhysActive. Unsurprisingly we get very similar barcharts for these two variables as the last.
+```{r EZ comparison pt. 2}
+ggplot(NHANES_adult) +
+  aes(x = LittleInterest, fill = PhysActive, na.rm = TRUE) + 
+  geom_bar(position = "dodge") +
+  theme_cowplot()
+
+ggplot(NHANES_adult) +
+  aes(x = LittleInterest, fill = PhysActive, na.rm = TRUE) + 
+  geom_bar(position = "fill") +
+  ylab("Percent") +
+  theme_cowplot()
+```
+
+We run a chi squared test on the two variables to confirm our thoughts about the relationship between being
+physically active. We get a significant p-value (p = 1.787e-09) which means it is safe to reject the null
+hypothesis that there is no relationship between the variables of interest. We can actually look at the
+contribution of each cell in the table by checking out the Pearson residual for each. From that calculation we can
+see that the combination of Physically Active: No and Depressed: Most days contributed the most to the chi squared
+(r = 3.605).
+
+http://www.sthda.com/english/wiki/chi-square-test-of-independence-in-r
+https://stackoverflow.com/questions/48918408/how-to-add-label-in-table-in-r
+```{r Chi-squared test}
+PhysActivity_Depression = table(NHANES_adult$PhysActive, NHANES_adult$Depressed, dnn = c("Physically Active", "Depressed (days)"))
+PhysActivity_Depression
+
+chisq <- chisq.test(PhysActivity_Depression)
+chisq 
+round(chisq$residuals, 3)
+
+```
 
 ## Challenge your solution
+I had a little difficulty mustering up the creative juices to challenge my solution creatively so I decided to just
+copy the method used in the Exploratory Data Analysis book. Even so, I understand why this step is an important one
+in the data analysis process, since we took "the easy way out" earlier. To challenge the solution, I employed the 
+bootstrap method which randomly alters the dataset in a way that it is for the most part the same but slightly 
+different. The same statistical analysis was then used to analyze the "new" dataset. 
+
+After bootstrapping, there is still a significant p-value (p = 6.565e-09) which is still statistically significant.
+Furthermore, the Pearson residuals for several variable combinations decreased indicating that they had
+less contribution to the overall chi squared value. Regardless, the Pearson residual for the combination of
+Physically Active: No and Depressed: Most days contributed the most to the chi squared (r = 3.326).
+```{r Challenge the solution}
+set.seed(11)
+N <- nrow(NHANES_adult)
+idx <- sample(N, N, replace = TRUE)
+NHANES_adult2 <- NHANES_adult[idx, ]
+
+PhysActivity_Depression2 = table(NHANES_adult2$PhysActive, NHANES_adult2$Depressed, dnn = c("Physically Active", "Depressed (days)"))
+PhysActivity_Depression2
+
+chisq2 <- chisq.test(PhysActivity_Depression2)
+chisq2
+round(chisq2$residuals, 3)
+```
 
 ## Follow up
 
+To follow up on these findings, I'd argue that the variables selected to answer the intial question could have been
+better. I think PhysActiveDays would have been a stronger representation of exercise since whether or not a person
+is physically active can be subjective. I don't believe looking at how these results could change after several
+years is necessary but could be interesting. 
+
 # Analytic Graphics
 
-Follow Section 6.1 and 6.2 to visualize the comparisons that were essential to answering the question.
+I have no idea what analytical graphics to use but here are some that the page on chi squared I refrenced earlier
+used. These graphics show a contingency table for the variables PhysActive and Depressed. It's cool because the
+size of the circle correlates to the number of instances in the dataset. The second shows the scale of the Pearson
+residuals from chi squared with the size and color of the circles correlating to magnitude of the individual
+residuals. The default color for the text labels is actually red and it took me a while to figure out that I
+had to change it to black lol (why is the default red???).
+```{r Analytical analysis using graphical graphics}
+# Visualize contingency table
+balloonplot(t(PhysActivity_Depression),
+    main ="Physical Activity~Depression", xlab ="Depressed (days)", ylab="PhysActive", label.size = 0.75,
+    label = TRUE, show.margins = FALSE)
+
+# Visualize Pearson residuals
+corrplot(tl.col = "black", chisq$residuals, is.cor = FALSE)
+```
 
 ## Show comparisons
 
+There isn't a whole lot we can do comparison-wise since the variables I chose cover both ends of the spectrum. Had
+a chose perhaps PhysAcitveDays which measures the number of days in a week that a respondent is physically active,
+I could have used PhysActive: No as the comparison.
+
 ## Show causality, mechanism, explanation, systematic structure
+
+Low testosterone can be a contributer to the onset or worsening of depression in both males and females.
+Furthermore, exercise can result in increased testosterone. Luckily, testosterone levels were measured in this
+dataset and can be used to establish causality.
+
+Of course after running the code I realized that the researchers did not get testosterone levels for female
+participants... 
+
+The boxplot shows, the medians and distributions of testosterone level for both PhysActive categories are
+approximately the same. However the median testosterone value for Depressed: None is greater than that of both
+Depressed: Several and Most which supports the proposed causality between testosterone and depression. Since the
+median and IQR of of testosterone level by PhysActive does not show much meaningful information we can check the
+means as well. 
+```{r Boxplots for testosterone}
+
+NHANES_adult_male <- subset(NHANES_adult, (Sex == "Male"))
+NHANES_adult_female <- subset(NHANES_adult, (Sex == "Female"))
+
+ggplot(NHANES_adult_male) + 
+  aes(x = PhysActive, y = (Testosterone)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
+  guides(alpha=FALSE) +
+  xlab("PhysActive") + 
+  ylab("Testosterone level") +
+  theme_cowplot()
+
+ggplot(NHANES_adult_male) + 
+  aes(x = Depressed, y = (Testosterone)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
+  guides(alpha=FALSE) +
+  xlab("PhysActive") + 
+  ylab("Testosterone level") +
+  theme_cowplot()
+#Female shows nothing
+ggplot(NHANES_adult_female) + 
+  aes(x = PhysActive, y = (Testosterone)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "red") +
+  guides(alpha=FALSE) +
+  xlab("Depressed") + 
+  ylab("Testosterone level") +
+  theme_cowplot()
+```
+
+When checking out the plotted means, a relatively small difference between PhysActive categories becomes apparent.
+That being said the 95% confidence interval does overlap a little bit It's difficult to predict what a t-test might
+yield for these variables. Taking a look at the plotted means for testosterone level and Depressed suggests
+testosterone level decreases the more often a person is depressed. Once again there is overlap in the 95% confidence intervals so a statistical test could help clear things up.
+```{r Means: Testosterone ~ PhysActive, Testosterone ~ Depressed}
+plotmeans((Testosterone) ~ PhysActive, data = NHANES_adult, xlab = "PhysActive", ylab = "Testosterone level")
+plotmeans((Testosterone) ~ Depressed, data = NHANES_adult, xlab = "Depressed", ylab = "Testosterone level")
+```
+
+Since the testosterone data can only add meaningful information to our narrative for males, I think it's best to
+find another variable in the dataset that will encompass both males and females. Not getting enough sleep/having
+troubled sleep can also result in depression regardless of gender. Furthermore, according to myself, physical
+activity can really help with establishing and maintaining a healthy sleeping pattern. Therefore, we may be able to
+draw some measure of causality from the sleep length/qualitymeasurements included in this dataset.
+
+Analyzing the boxplots there does not appear to be an immediate difference in the distribution of hours slept with
+regard to how individuals answered PhysActive. The boxplot for Depressed and hours slept shows relatively similar
+distributions between categories of Depressed. Notably Depressed: Most has a lower median and upper/lower quartiles
+than the other categories of Depressed.
+```{r Boxplots for testosterone}
+NHANES_adult <- drop_na(NHANES_adult, SleepHrsNight)
+
+ggplot(NHANES_adult) + 
+  aes(x = PhysActive, y = SleepHrsNight) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
+  guides(alpha=FALSE) +
+  xlab("PhysActive") + 
+  ylab("Hourse slept") +
+  theme_cowplot()
+
+ggplot(NHANES_adult) + 
+  aes(x = Depressed, y = SleepHrsNight) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
+  guides(alpha=FALSE) +
+  xlab("Depressed") + 
+  ylab("Hours slept") +
+  theme_cowplot()
+```
+
+Since the median and IQR for PhysActive and hours slept did not yield much meaningful information we can take a
+look at the plotted means of these variables. In this case there is a obvious difference between the mean hours
+slept for the two responses to PhysActive. Furthermore the 95% confidence intervals do not overlap and so we could
+expect a statistically significant difference between the two populations after performing a t-test. Taking a look 
+at the second graphic which looks at hours slept and the Depressed variable, we see a general decrease in the mean 
+hours slept as the Depressed variable "increases". Confidence intervals for this plot are also pretty good so
+statistical analysis should fit the narrative.
+```{r Means: SleepHrsNight ~ PhysActive, SleepHrsNight ~ Depressed}
+plotmeans(SleepHrsNight ~ PhysActive, data = NHANES_adult, xlab = "PhysActive", ylab = "Hours slept")
+plotmeans(SleepHrsNight ~ Depressed, data = NHANES_adult, xlab = "Depressed", ylab = "Hours slept")
+```
+
+Well I guess we should do a t-test or two. The t-test for testosterone level did return significantly different
+populations (p = 0.04514). Performing the test on hours slept with respect to PhysActive response returned a
+significant likliehood of independent populations (p = 8.33e-06).
+```{r A t-test or two}
+cat("Testosterone level ~ PhysActive")
+t.test(NHANES_adult$Testosterone ~ NHANES_adult$PhysActive, var.equal = TRUE)
+
+cat("SleepHrsNight ~ PhysActive")
+t.test(NHANES_adult$SleepHrsNight ~ NHANES_adult$PhysActive, var.equal = TRUE)
+```
+
+

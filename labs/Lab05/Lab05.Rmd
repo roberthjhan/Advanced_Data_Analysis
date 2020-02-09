@@ -73,6 +73,8 @@ Use dplyr to filter the data frame for p values < 0.05.
 
 ```{r}
 
+Data <- dplyr::filter(Data, p < 0.05)
+table(Data)
 ```
 
 ## Bonferroni Correction
@@ -87,7 +89,9 @@ Use dplyr to mutate the data frame, adding a column for Bonferroni-adjusted p va
 Now which dietary variables are significant?
 
 ```{r}
-
+a <- p.adjust(Data$p, method = "bonferroni", 25)
+Data <- mutate(Data, v = a )
+table(Data)
 ```
 
 ## Limitations of the Bonferroni Correction
