@@ -70,6 +70,8 @@ statistics revealed major depressive episodes are the common mode of reporting, 
 of adults have at least one major depressive episode per year. If we say that answering "Most" to the Depressed
 prompt, most closely resembles a major depressive episode we find that 6.3% of respondents fall into that analog. 
 Therefore, it is probably safe to say this dataset is a fair representation.
+
+https://www.nimh.nih.gov/health/statistics/major-depression.shtml
 ```{r}
 cat("Depressed\n")
 summary(NHANES$Depressed)
