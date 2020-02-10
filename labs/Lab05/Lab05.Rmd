@@ -69,12 +69,15 @@ Whole_milk         .039
 ## Unadjusted p Values
 
 Use dplyr to arrange the data frame in order of p values.
-Use dplyr to filter the data frame for p values < 0.05.
 
 ```{r}
+Data %>% dplyr::arrange(p)
 
-Data <- dplyr::filter(Data, p < 0.05)
-table(Data)
+```
+
+Use dplyr to filter the data frame for p values < 0.05.
+```{r}
+Data %>% dplyr::filter(p <= 0.05)
 ```
 
 ## Bonferroni Correction
@@ -89,9 +92,10 @@ Use dplyr to mutate the data frame, adding a column for Bonferroni-adjusted p va
 Now which dietary variables are significant?
 
 ```{r}
-a <- p.adjust(Data$p, method = "bonferroni", 25)
-Data <- mutate(Data, v = a )
-table(Data)
+adj <- p.adjust(Data$p, method = "bonferroni")
+Data <- mutate(Data, p_adjust = adj )
+Data
+Data %>% dplyr::filter(p_adjust <= 0.05)
 ```
 
 ## Limitations of the Bonferroni Correction
@@ -100,10 +104,22 @@ The Bonferroni correction is appropriate when a single false positive in a set o
 
 Another important issue with the Bonferroni correction is deciding what a "family" of statistical tests is. García-Arenzana et al. (2014) tested 25 dietary variables, so are these tests one "family," making the critical P value 0.05/25? But they also measured 13 non-dietary variables such as age, education, and socioeconomic status; should they be included in the family of tests, making the critical P value 0.05/38? And what if in 2015, García-Arenzana et al. write another paper in which they compare 30 dietary variables between breast cancer and non-breast cancer patients; should they include those in their family of tests, and go back and reanalyze the data in their 2014 paper using a critical P value of 0.05/55? There is no firm rule on this; you'll have to use your judgment, based on just how bad a false positive would be. Obviously, you should make this decision before you look at the results, otherwise it would be too easy to subconsciously rationalize a family size that gives you the results you want.
 
+TLDR: bonerferrari is extremely conservative approach. Use if you never want to be wrong basically. Almost never get a false discovery. Correction is based on the family of variables. More variables = stricter p adjustment. Bonerferrari is great if the cost of false discovery is high, but otherwise kinda sucks.
+
 Use p.adjust to test the effect of 55 comparisons by setting n=55. (Note you should never do this normally!)
 
 ```{r}
+adj <- p.adjust(Data$p, method = "bonferroni", n = 55)
+Data <- mutate(Data, p_adjust55 = adj )
+Data
+Data %>% dplyr::filter(p_adjust55 <= 0.05)
 
+
+
+
+#Data%>%
+#  mutate(p.adj = p.adjust(p, method = "bonferroni", n = 55)) %>%
+#  arrange(p) -> newData #stores in new dataframe
 ```
 
 ## False discovery rate: Benjamini–Hochberg procedure
@@ -122,21 +138,61 @@ Now which dietary variables are significant at an FDR cutoff of 0.05? At an FDR 
 How do the adjusted p-values for the BH procedure compare to the Bonferroni procedure?
 
 ```{r}
-
+FDR <- p.adjust(Data$p, method = "BH")
+Data <- mutate(Data, BH_adj_p = FDR )
+Data %>% dplyr::filter(BH_adj_p <= 0.05)
+Data %>% dplyr::filter(BH_adj_p <= 0.25)
 ```
 
-You should carefully choose your false discovery rate BEFORE analyzing your data. Usually, when you're doing a large number of statistical tests, your experiment is just the first, exploratory step, and you're going to follow up with more experiments on the interesting individual results. If the cost of additional experiments is low and the cost of a false negative (missing a potentially important discovery) is high, you should probably use a fairly high false discovery rate, like 0.10 or 0.20, so that you don't miss anything important. Sometimes people use a false discovery rate of 0.05, probably because of confusion about the difference between false discovery rate and probability of a false positive when the null is true; a false discovery rate of 0.05 is probably too low for many experiments.
+You should carefully choose your false discovery rate BEFORE analyzing your data. Usually, when you're doing a large 
+number of statistical tests, your experiment is just the first, exploratory step, and you're going to follow up with 
+more experiments on the interesting individual results. If the cost of additional experiments is low and the cost of a
+false negative (missing a potentially important discovery) is high, you should probably use a fairly high false 
+discovery rate, like 0.10 or 0.20, so that you don't miss anything important. Sometimes people use a false discovery 
+rate of 0.05, probably because of confusion about the difference between false discovery rate and probability of a 
+false positive when the null is true; a false discovery rate of 0.05 is probably too low for many experiments.
 
-The Benjamini-Hochberg procedure is less sensitive than the Bonferroni procedure to your decision about what is a "family" of tests. If you increase the number of tests, and the distribution of P values is the same in the newly added tests as in the original tests, the Benjamini-Hochberg procedure will yield the same proportion of significant results. For example, if García-Arenzana et al. (2014) had looked at 50 variables instead of 25 and the new 25 tests had the same set of P values as the original 25, they would have 10 significant results under Benjamini-Hochberg with a false discovery rate of 0.25. This doesn't mean you can completely ignore the question of what constitutes a family; if you mix two sets of tests, one with some low P values and a second set without low P values, you will reduce the number of significant results compared to just analyzing the first set by itself.
+The Benjamini-Hochberg procedure is less sensitive than the Bonferroni procedure to your decision about what is a 
+"family" of tests. If you increase the number of tests, and the distribution of P values is the same in the newly 
+added tests as in the original tests, the Benjamini-Hochberg procedure will yield the same proportion of significant 
+results. For example, if García-Arenzana et al. (2014) had looked at 50 variables instead of 25 and the new 25 tests 
+had the same set of P values as the original 25, they would have 10 significant results under Benjamini-Hochberg with 
+a false discovery rate of 0.25. This doesn't mean you can completely ignore the question of what constitutes a family;
+if you mix two sets of tests, one with some low P values and a second set without low P values, you will reduce the 
+number of significant results compared to just analyzing the first set by itself.
 
 ## Limitations of Benjamini-Hochberg
 
-The Bonferroni correction and Benjamini-Hochberg procedure assume that the individual tests are independent of each other, as when you are comparing sample A vs. sample B, C vs. D, E vs. F, etc. If you are comparing sample A vs. sample B, A vs. C, A vs. D, etc., the comparisons are not independent; if A is higher than B, there's a good chance that A will be higher than C as well. An example of an experimental design with multiple, non-independent comparisons is when you compare multiple variables between groups, and the variables are correlated with each other within groups. An example would be knocking out your favorite gene in mice and comparing everything you can think of on knockout vs. control mice: length, weight, strength, running speed, food consumption, feces production, etc. All of these variables are likely to be correlated within groups; mice that are longer will probably also weigh more, would be stronger, run faster, eat more food, and poop more. To analyze this kind of experiment, you can use a generalized linear model (see below).
+The Bonferroni correction and Benjamini-Hochberg procedure assume that the individual tests are independent of each 
+other, as when you are comparing sample A vs. sample B, C vs. D, E vs. F, etc. If you are comparing sample A vs. 
+sample B, A vs. C, A vs. D, etc., the comparisons are not independent; if A is higher than B, there's a good chance 
+that A will be higher than C as well. An example of an experimental design with multiple, non-independent comparisons 
+is when you compare multiple variables between groups, and the variables are correlated with each other within groups.
+An example would be knocking out your favorite gene in mice and comparing everything you can think of on knockout vs. 
+control mice: length, weight, strength, running speed, food consumption, feces production, etc. All of these variables
+are likely to be correlated within groups; mice that are longer will probably also weigh more, would be stronger, run 
+faster, eat more food, and poop more. To analyze this kind of experiment, you can use a generalized linear model (see 
+below).
 
 ## When not to correct for multiple comparisons
 
-The goal of multiple comparisons corrections is to reduce the number of false positives, because false positives can be embarrassing, confusing, and cause you and other people to waste your time. An unfortunate byproduct of correcting for multiple comparisons is that you may increase the number of false negatives, where there really is an effect but you don't detect it as statistically significant. If false negatives are very costly, you may not want to correct for multiple comparisons at all. For example, let's say you've gone to a lot of trouble and expense to knock out your favorite gene, mannose-6-phosphate isomerase (Mpi), in a strain of mice that spontaneously develop lots of tumors. Hands trembling with excitement, you get the first Mpi-/- mice and start measuring things: blood pressure, growth rate, maze-learning speed, bone density, coat glossiness, everything you can think of to measure on a mouse. You measure 50 things on Mpi-/- mice and normal mice, run the approriate statistical tests, and the smallest P value is 0.013 for a difference in tumor size. If you use a Bonferroni correction, that P=0.013 won't be close to significant; it might not be significant with the Benjamini-Hochberg procedure, either. Should you conclude that there's no significant difference between the Mpi-/- and Mpi+/+ mice, write a boring little paper titled "Lack of anything interesting in Mpi-/- mice," and look for another project? No, your paper should be "Possible effect of Mpi on cancer." You should be suitably cautious, of course, and emphasize in the paper that there's a good chance that your result is a false positive; but the cost of a false positive—if further experiments show that Mpi really has no effect on tumors—is just a few more experiments. The cost of a false negative, on the other hand, could be that you've missed out on a hugely important discovery.
-
+The goal of multiple comparisons corrections is to reduce the number of false positives, because false positives can
+be embarrassing, confusing, and cause you and other people to waste your time. An unfortunate byproduct of correcting 
+for multiple comparisons is that you may increase the number of false negatives, where there really is an effect but 
+you don't detect it as statistically significant. If false negatives are very costly, you may not want to correct for 
+multiple comparisons at all. For example, let's say you've gone to a lot of trouble and expense to knock out your 
+favorite gene, mannose-6-phosphate isomerase (Mpi), in a strain of mice that spontaneously develop lots of tumors. 
+Hands trembling with excitement, you get the first Mpi-/- mice and start measuring things: blood pressure, growth 
+rate, maze-learning speed, bone density, coat glossiness, everything you can think of to measure on a mouse. You 
+measure 50 things on Mpi-/- mice and normal mice, run the approriate statistical tests, and the smallest P value is 
+0.013 for a difference in tumor size. If you use a Bonferroni correction, that P=0.013 won't be close to significant; 
+it might not be significant with the Benjamini-Hochberg procedure, either. Should you conclude that there's no 
+significant difference between the Mpi-/- and Mpi+/+ mice, write a boring little paper titled "Lack of anything 
+interesting in Mpi-/- mice," and look for another project? No, your paper should be "Possible effect of Mpi on 
+cancer." You should be suitably cautious, of course, and emphasize in the paper that there's a good chance that your 
+result is a false positive; but the cost of a false positive—if further experiments show that Mpi really has no effect
+on tumors—is just a few more experiments. The cost of a false negative, on the other hand, could be that you've missed
+out on a hugely important discovery.
 
 # Generalized Linear Models
 
@@ -181,17 +237,16 @@ sleepfit = lm(sleep_total ~ log(bodywt), data=msleep)
 summary(sleepfit)
 ```
 
-
 Using a generalized linear model without an explicit "method" linking function is the same as using a linear model.
 The default method "glm.fit" uses iteratively reweighted least squares (IWLS).
 
 ```{r simple GLM}
-sleepglm = glm(sleep_total ~ log10(bodywt), data=msleep)
+sleepglm <- glm(sleep_total ~ log10(bodywt), data=msleep)
 summary(sleepglm)
 ```
 
 In this next graph, we have used natural log transformations for both body weight and sleep cycle, to be consistent with the published analysis.
-We have also switched vore status for order (the reason for this will be clear later).
+We have also looked at "order" insted of "vore"" status (the reason for this will be clear later).
 
 ```{r}
 ggplot(msleep) +
@@ -207,13 +262,41 @@ ggplot(msleep) +
 Refer to the abstract of the original paper:
 https://www.pnas.org/content/104/3/1051.abstract
 
-The authors conclude that they "provide strong evidence that time scales for sleep are set by the brain's, not the whole-body, metabolic rate."
+The authors conclude that they "provide strong evidence that time scales for sleep are set by the brain's, not the 
+whole-body, metabolic rate."
 
-Plot and compare the summary these two alternative models, using natural log transformations for both the brain/body weight and for sleep cycle.
+Plot and compare the summary these two alternative models, using natural log transformations for both the brain/body 
+weight and for sleep cycle.
 
 ```{r}
+ggplot(msleep) +
+  aes(x = log10(brainwt), y = log10(sleep_cycle)) +
+  geom_point(aes(color = factor(order))) +
+  geom_smooth(method=lm , color="black", se=TRUE) +
+  theme_cowplot() +
+  labs(color="Order") +
+  xlab("Natural Log brain weight (kg)") + 
+  ylab("Natural Log sleep cycle (Sleep/Awake)")
+
+ggplot(msleep) +
+  aes(x = log10(bodywt), y = log10(sleep_cycle)) +
+  geom_point(aes(color = factor(order))) +
+  geom_smooth(method=lm , color="black", se=TRUE) +
+  theme_cowplot() +
+  labs(color="Order") +
+  xlab("Natural Log body weight (kg)") + 
+  ylab("Natural Log sleep cycle (Sleep/Awake)")
+
+
+sleep_brain_glm <- glm(log10(sleep_cycle) ~ log10(brainwt), data=msleep)
+cat("brain weight AIC:", (sleep_brain_glm$aic)) #AIC is unitless cannot compare AIC's from one dataset to that of another dataset. Lower is better
+cat("\n")
+sleep_body_glm <- glm(log10(sleep_cycle) ~ log10(bodywt), data=msleep)
+cat("body weight AIC:", (sleep_body_glm$aic))
 
 ```
+The modelbased on brain weight is better (lower AIC).
+
 
 How do we determine which model is preferred?
 Last week we discussed methods for model selection that focused on adjusted R squared or on p-values.
@@ -228,7 +311,8 @@ Which model has the lower AIC?
 
 ## Complex Generalized Linear Models
 
-Using the GLM we can also add categorical variable to see if they increase the power of the model to predict sleep cycle.
+Using the GLM we can also add categorical variable to see if they increase the power of the model to predict sleep 
+cycle.
 
 ```{r full GLM}
 sleepfullglm = glm(log(sleep_cycle) ~ log10(bodywt) + log10(brainwt) + vore + order + conservation, data=msleep)
@@ -254,20 +338,22 @@ You can see that the lowest AIC is found with dropping "conservation".
 Construct a new model without the conservation term and test it again for dropping a term.
 
 ```{r}
-
+glm2 = glm(log(sleep_cycle) ~ log10(bodywt) + log10(brainwt) + vore + order, data=msleep)
+dropterm(glm2)
 ```
 
 Continue dropping terms until the dropping any of the terms no longer decreases the AIC.
 
 
 ```{r}
-
+glm3 = glm(log(sleep_cycle) ~ log10(bodywt) + log10(brainwt) + order, data=msleep)
+dropterm(glm3)
 ```
 
 ```{r}
-
 ```
 
+order is significant
 What was the final model? 
 Does this support the conclusion in the abstract?
 
@@ -293,10 +379,16 @@ log(sleep_cycle) ~ log10(brainwt) + order + log10(brainwt):order
 Test a new version of your best model with an interaction between the terms and use dropterm to determine if it improves the model.
 
 ```{r}
-
+glm5 <- glm(log(sleep_cycle) ~ log10(brainwt) *order, data = msleep)
+dropterm((glm5))
+summary(glm5)
 ```
+Need more sleep data. Population is not large enough to support powerful statistics.
 
-Note that dropterm does not try to individually drop the interacting terms - because the model would not make sense to keep the interaction but drop the main term. The model instead drops the interaction and tests that against the model without dropping the interaction.
+
+Note that dropterm does not try to individually drop the interacting terms - because the model would not make sense to
+keep the interaction but drop the main term. 
+The model instead drops the interaction and tests that against the model without dropping the interaction.
 
 Did adding an interaction improve this model?
 
@@ -307,3 +399,8 @@ GLMs can use other functions:
 https://en.wikipedia.org/wiki/Generalized_linear_model#Link_function
 The selection of this function will depend on the whether the response variables have error distribution models other than a normal distribution.
 Other link functions are also necessary if the outcome variable is categorical or logical.
+
+It is important to note that when comparing different species (or genera) that there is an additional factor to consider - the evolutionary relationship of the species.
+It is beyond the scope of this lab, but phylogenetically controlled regression models can incorporate this factor into their analysis.
+Phylogenetic Generalized Least Squares models can control for the correlation within groups of closely-related species.
+http://www.r-phylo.org/wiki/HowTo/PGLS

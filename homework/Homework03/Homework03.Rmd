@@ -5,7 +5,7 @@ date: "02/03/2020"
 output: github_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=TRUE, cache = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -41,12 +41,12 @@ According to what's been read in, we can expect 10,000 rows of data, with severa
 data("NHANES")
 str(NHANES)
 #help(NHANES) #information
-nrow(NHANES)
-ncol(NHANES)
+cat("Rows: ", nrow(NHANES), "\n")
+cat("Columns: ", ncol(NHANES))
 ```
 
 Summary of dataset.
-```{r Summary of NHANES dataset, include=FALSE}
+```{r Summary of NHANES dataset}
 summary(NHANES)
 ```
 
@@ -214,8 +214,9 @@ Depressed: None is greater than that of both Depressed: Several and Most which s
 testosterone and depression. Since the median and IQR of of testosterone level by PhysActive does not show much
 meaningful information we can check the means as well. 
 ```{r Boxplots for testosterone}
-NHANES_adult_male <- subset(NHANES_adult, (Sex == "Male"))
-NHANES_adult_female <- subset(NHANES_adult, (Sex == "Female"))
+
+NHANES_adult_male <- base::subset(NHANES_adult, (Sex == "Male"))
+NHANES_adult_female <- base::subset(NHANES_adult, (Sex == "Female"))
 
 ggplot(NHANES_adult_male) + 
   aes(x = PhysActive, y = (Testosterone)) +
@@ -264,7 +265,7 @@ Analyzing the boxplots there does not appear to be an immediate difference in th
 regard to how individuals answered PhysActive. The boxplot for Depressed and hours slept shows relatively similar
 distributions between categories of Depressed. Notably Depressed: Most has a lower median and upper/lower quartiles
 than the other categories of Depressed.
-```{r Boxplots for testosterone}
+```{r Boxplots for hours slept}
 NHANES_adult <- drop_na(NHANES_adult, SleepHrsNight)
 
 ggplot(NHANES_adult) + 
