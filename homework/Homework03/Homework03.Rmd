@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Homework 3
 Due at noon on 12 Feb 2020.
 
-## Loading Libraries
+
 ```{r Load Libraries, include=FALSE}
 if (!require("conflicted")) install.packages("conflicted"); library(conflicted)
 # Load other packages here.
@@ -37,7 +37,7 @@ health examination component of the survey. The health examination is conducted 
 center (MEC)" (Lab03 description). This dataset includes data from two years (2009-10 & 2010-11)
 
 According to what's been read in, we can expect 10,000 rows of data, with several rows having at least one NA value, and 76 columns or variables.
-```{r NHANES}
+```{r NHANES, echo=FALSE}
 data("NHANES")
 str(NHANES)
 #help(NHANES) #information
@@ -46,7 +46,7 @@ cat("Columns: ", ncol(NHANES))
 ```
 
 Summary of dataset.
-```{r Summary of NHANES dataset}
+```{r Summary of NHANES dataset, echo=FALSE}
 summary(NHANES)
 ```
 
@@ -72,7 +72,7 @@ prompt, most closely resembles a major depressive episode we find that 6.3% of r
 Therefore, it is probably safe to say this dataset is a fair representation.
 
 https://www.nimh.nih.gov/health/statistics/major-depression.shtml
-```{r}
+```{r Validation, echo=FALSE}
 cat("Depressed\n")
 summary(NHANES$Depressed)
 cat("Depressed:", 100*(1009+418)/(5246+1009+418), "%\n")
@@ -80,7 +80,7 @@ cat("Depressed (Most):", 100*(418)/(5246+1009+418), "%")
 ```
 
 ## Try the easy solution first
-```{r Get subset of NHANES, include = FALSE}
+```{r Get subset of NHANES, echo=FALSE}
 NHANES_adult <- subset(NHANES, (Age >21)) #subset the full dataset
 NHANES_adult <- drop_na(NHANES_adult, LittleInterest) 
 NHANES_adult <- drop_na(NHANES_adult, Depressed) 
@@ -134,7 +134,7 @@ see that the combination of Physically Active: No and Depressed: Most days contr
 
 http://www.sthda.com/english/wiki/chi-square-test-of-independence-in-r
 https://stackoverflow.com/questions/48918408/how-to-add-label-in-table-in-r
-```{r Chi-squared test}
+```{r Chi-squared test, echo=FALSE}
 PhysActivity_Depression = table(NHANES_adult$PhysActive, NHANES_adult$Depressed, dnn = c("Physically Active", "Depressed (days)"))
 PhysActivity_Depression
 
@@ -154,7 +154,7 @@ After bootstrapping, there is still a significant p-value (p = 6.565e-09) which 
 Furthermore, the Pearson residuals for several variable combinations decreased indicating that they had
 less contribution to the overall chi squared value. Regardless, the Pearson residual for the combination of
 Physically Active: No and Depressed: Most days contributed the most to the chi squared (r = 3.326).
-```{r Challenge the solution}
+```{r Challenge the solution, echo=FALSE}
 set.seed(11)
 N <- nrow(NHANES_adult)
 idx <- sample(N, N, replace = TRUE)
@@ -213,7 +213,15 @@ approximately the same with PhysActive: Yes having a slightly higher median. How
 Depressed: None is greater than that of both Depressed: Several and Most which supports the proposed causality between
 testosterone and depression. Since the median and IQR of of testosterone level by PhysActive does not show much
 meaningful information we can check the means as well. 
-```{r Boxplots for testosterone}
+
+Actually the boxplot codeblock won't knit and I can't figure out why. I've commented out the code and added the images to the working directory so that the boxplots will show and the file can be knitted as a temporary measure
+
+![Lost boxplot 1: Male Testosterone~PhysActive](Male1.png)
+
+![Lost boxplot 2: Male Testosterone~PhysActive](Male2.png)
+
+![Lost boxplot 3: Female... Nothing there!](Female.png)
+#```{r Boxplots for testosterone}
 
 NHANES_adult_male <- base::subset(NHANES_adult, (Sex == "Male"))
 NHANES_adult_female <- base::subset(NHANES_adult, (Sex == "Female"))
@@ -232,7 +240,7 @@ ggplot(NHANES_adult_male) +
   geom_boxplot(outlier.shape = NA) +
   geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
   guides(alpha=FALSE) +
-  xlab("PhysActive") + 
+  xlab("Depressed") + 
   ylab("Testosterone level") +
   theme_cowplot()
 #Female shows nothing
@@ -244,7 +252,7 @@ ggplot(NHANES_adult_female) +
   xlab("Depressed") + 
   ylab("Testosterone level") +
   theme_cowplot()
-```
+#```
 
 When checking out the plotted means, a relatively small difference between PhysActive categories becomes apparent.
 That being said the 95% confidence interval does overlap a little bit It's difficult to predict what a t-test might
@@ -302,7 +310,7 @@ plotmeans(SleepHrsNight ~ Depressed, data = NHANES_adult, xlab = "Depressed", yl
 Well I guess we should do a t-test or two. The t-test for testosterone level did return significantly different
 populations (p = 0.04514). Performing the test on hours slept with respect to PhysActive response returned a
 significant likliehood of independent populations (p = 8.33e-06).
-```{r A t-test or two}
+```{r A t-test or two, echo=FALSE}
 cat("Testosterone level ~ PhysActive")
 t.test(NHANES_adult$Testosterone ~ NHANES_adult$PhysActive, var.equal = TRUE)
 
