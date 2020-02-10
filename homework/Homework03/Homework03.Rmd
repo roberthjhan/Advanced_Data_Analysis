@@ -13,13 +13,6 @@ knitr::opts_chunk$set(echo = TRUE)
 Due at noon on 12 Feb 2020.
 
 ## Loading Libraries
-Use the following syntax to load any libraries that you need. This code will prevent errors that will interfere with knitting of the Rmd file.
-Also note that the `include=FALSE` option will prevent this code chunk from appearing in the markdown file.
-
-First we will load the "conflicted" library. This will help us identify any problems with packages that we use.
-
-We will then load the entire tidyverse library, which includes *dplyr*, *ggplot2*, *readr*, and other packages.
-
 ```{r Load Libraries, include=FALSE}
 if (!require("conflicted")) install.packages("conflicted"); library(conflicted)
 # Load other packages here.
@@ -52,6 +45,7 @@ nrow(NHANES)
 ncol(NHANES)
 ```
 
+Summary of dataset.
 ```{r Summary of NHANES dataset, include=FALSE}
 summary(NHANES)
 ```
@@ -63,48 +57,25 @@ head(NHANES)
 tail(NHANES)
 ```
 
-
-
-
-
-
-
-
-
-
-Remember to edit the Rmd to remove any irrelevant code for your assignment.
-
 ## Formulate your question
-
 
 Question: Recently I came across a subreddit called r/EOOD, or exercise out of depression. We've all heard of the 
 "runners high" but can physical activity really reduce depression?
 
+## Validate with at least one external data source
 
-
-
-
-
-
-Always formulate your question(s) *before* you begin analyzing the data. 
-(But you may look at the names of the variables measured to see what questions are possible.)
-
-## Read in your data
-
-## Check the packaging
-
-Validate that the data file is complete and properly loaded.
-
-## Run str()
-
-Fix any problems that you find.
-
-## Look at the top and the bottom of your data
-
-## Check your “n”s
-
-################################################################## Validate with at least one external data source
-
+We can calculate the number of respondents reporting some form of depression using the Depressed variable in NHANES. 
+Out of the participants choosing to answer 21.4% reported some level of depression. My cursory look into depression
+statistics revealed major depressive episodes are the common mode of reporting, and that the NIH estimates around 7%
+of adults have at least one major depressive episode per year. If we say that answering "Most" to the Depressed
+prompt, most closely resembles a major depressive episode we find that 6.3% of respondents fall into that analog. 
+Therefore, it is probably safe to say this dataset is a fair representation.
+```{r}
+cat("Depressed\n")
+summary(NHANES$Depressed)
+cat("Depressed:", 100*(1009+418)/(5246+1009+418), "%\n")
+cat("Depressed (Most):", 100*(418)/(5246+1009+418), "%")
+```
 
 ## Try the easy solution first
 ```{r Get subset of NHANES, include = FALSE}
@@ -119,10 +90,11 @@ NHANES_adult <- drop_na(NHANES_adult, SleepHrsNight)
 To visualize the relationship between physical activity and depression, we can take a look at the Depressed and
 PhysActive variables. Both variables are categorical so we'll take a look at counts in a barchart.
 
-It kind of looks like the ratio of "No" to "Yes" (Physically Active) increases with the Depressed variable. To get
-a better look we can use the same data to build a percent stacked barchart. Checking that out, we can see the
-percentage of people that are not physically active is greatest in the depressed most days category, and the
-opposite is true for the depressed "None" days.
+It kind of looks like the ratio of "No" to "Yes" (Physically Active) increases with the Depressed variable. Its tough
+to tell because there is not a even distribution of counts between the levels of Depressed. To get a better look we
+can use the same data to build a percent stacked barchart. Checking that out, we can see the percentage of people that
+are not physically active is greatest in the depressed most days category, and the opposite is true for the depressed
+"None" days.
 ```{r EZ comparison}
 ggplot(NHANES_adult) +
   aes(x = Depressed, fill = PhysActive, na.rm = TRUE) + 
@@ -167,7 +139,6 @@ PhysActivity_Depression
 chisq <- chisq.test(PhysActivity_Depression)
 chisq 
 round(chisq$residuals, 3)
-
 ```
 
 ## Challenge your solution
@@ -236,12 +207,11 @@ Of course after running the code I realized that the researchers did not get tes
 participants... 
 
 The boxplot shows, the medians and distributions of testosterone level for both PhysActive categories are
-approximately the same. However the median testosterone value for Depressed: None is greater than that of both
-Depressed: Several and Most which supports the proposed causality between testosterone and depression. Since the
-median and IQR of of testosterone level by PhysActive does not show much meaningful information we can check the
-means as well. 
+approximately the same with PhysActive: Yes having a slightly higher median. However the median testosterone value for
+Depressed: None is greater than that of both Depressed: Several and Most which supports the proposed causality between
+testosterone and depression. Since the median and IQR of of testosterone level by PhysActive does not show much
+meaningful information we can check the means as well. 
 ```{r Boxplots for testosterone}
-
 NHANES_adult_male <- subset(NHANES_adult, (Sex == "Male"))
 NHANES_adult_female <- subset(NHANES_adult, (Sex == "Female"))
 
@@ -336,5 +306,3 @@ t.test(NHANES_adult$Testosterone ~ NHANES_adult$PhysActive, var.equal = TRUE)
 cat("SleepHrsNight ~ PhysActive")
 t.test(NHANES_adult$SleepHrsNight ~ NHANES_adult$PhysActive, var.equal = TRUE)
 ```
-
-
