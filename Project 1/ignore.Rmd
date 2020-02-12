@@ -1,0 +1,135 @@
+---
+title: "oki"
+author: "Robert Han"
+date: "2/10/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!require("UsingR")) install.packages("UsingR"); library(UsingR)
+if (!require("cowplot")) install.packages("cowplot"); library(cowplot)
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+if(!require("OneR")) install.packages("OneR"); library(OneR)
+if(!require("rlist")) install.packages("rlist"); library(rlist)
+```
+
+```{r}
+
+LHSP <- read.csv("G1.LHSPele.csv")
+#LHSP <- read.csv("practice.csv")
+typeof(LHSP)
+LHSPt <- t(LHSP)
+colnames(LHSPt) <- LHSPt[1,]
+
+```
+
+
+```{r}
+replicates = 3
+num = 1
+avgs <- list()
+#avgs[["Ladder"]] <- LHSP$Ladder
+avgs <- list()
+for (i in 3:length(LHSP)){
+  name = (paste0("X", num, sep =""))
+  if (i%%replicates == 0) {
+    avgs[name] <- (LHSP[i] + LHSP[i+1] + LHSP[i+2])/3
+    cbind(avgs, name)
+    num = num + 1
+    }
+}
+avgs <- data.frame(matrix(unlist(avgs), nrow=length(avgs$X1), byrow=F)) #Convert data from list to dataframe
+```
+
+
+```{r Get mean of counts for each ladder position}
+
+
+#LHSP <- mutate(LHSP, X1wghted = (avgs$X1 * LHSP$Ladder) )
+#LHSP$X1mean <- sum(LHSP$X1wghted)/sum(avgs$X1)
+
+#LHSP <- mutate(LHSP, X2wghted = (avgs$X2 * LHSP$Ladder) )
+#LHSP$X2mean <- sum(LHSP$X2wghted)/sum(avgs$X2)
+
+#LHSP <- mutate(LHSP, X9wghted = (avgs$X9 * LHSP$Ladder) )
+#LHSP$X9mean <- sum(LHSP$X9wghted)/sum(avgs$X9)
+
+
+
+ggplot() +
+  geom_density(aes(x=LHSP$Ladder, y=avgs$X1), fill="blue", stat="identity", alpha=.3) +
+  geom_density(aes(x=LHSP$Ladder, y=avgs$X2), fill="red", stat="identity", alpha=.3) +
+  geom_density(aes(x=LHSP$Ladder, y=avgs$X9), fill="green", stat="identity", alpha=.3) +
+  #geom_vline(aes(xintercept = LHSP$X1mean, color = "blue")) +
+  #geom_vline(aes(xintercept = LHSP$X2mean, color = "red")) +
+  #geom_vline(aes(xintercept = LHSP$X9mean, color = "green")) +
+  xlab("Ladder position") +
+  ylab("Count") +
+  theme_cowplot()
+```
+
+
+```{r}
+gen_plot <- function(param) {
+  
+  colors = c()
+for (i in param)  {
+ p<- ggplot() +
+    geom_density(aes(x=avgs$Ladder, y=i), stat="identity", alpha=.3)
+  
+}
+
+    
+return(p)
+  
+}
+
+```
+
+
+```{r}
+
+a <- list("a", "b")
+```
+
+
+
+
+
+
+
+
+```{r}
+ladder = (LHSPt[2,])
+xx = (LHSPt[3,])
+yy = (LHSPt[9,])
+zz = (LHSPt[5,])
+
+ggplot() +
+ geom_density(aes(x=ladder, y=xx), fill="blue", stat="identity", alpha=.3) +
+ geom_density(aes(x=ladder, y=yy), fill="red", stat="identity", alpha=.3) +
+ #geom_density(aes(x=ladder, y=zz), fill="green", stat="identity", alpha=.3) +
+ ylab("count") +
+ theme_cowplot()
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
