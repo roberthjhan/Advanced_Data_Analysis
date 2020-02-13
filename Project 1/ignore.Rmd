@@ -14,101 +14,123 @@ knitr::opts_chunk$set(echo = TRUE)
 if (!require("UsingR")) install.packages("UsingR"); library(UsingR)
 if (!require("cowplot")) install.packages("cowplot"); library(cowplot)
 if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
-if(!require("OneR")) install.packages("OneR"); library(OneR)
+#if(!require("OneR")) install.packages("OneR"); library(OneR)
 if(!require("rlist")) install.packages("rlist"); library(rlist)
-```
-
-```{r}
-
-LHSP <- read.csv("G1.LHSPele.csv")
-#LHSP <- read.csv("practice.csv")
-typeof(LHSP)
-LHSPt <- t(LHSP)
-colnames(LHSPt) <- LHSPt[1,]
-
+if(!require("skimr")) install.packages("skimr"); library(skimr)
 ```
 
 
-```{r}
+Data needs to be loaded in as a .csv document. Change the arguement() for read.csv accordingly.
+```{r read in data to project_data}
+project_data <- read.csv("G1.LHSPele.csv")
+#project_data <- read.csv("practice.csv")
+project_data_t <- t(project_data)
+colnames(project_data_t) <- project_data_t[1,]
+```
+
+
+```{r create a new dataset using means of replicates}
 replicates = 3
 num = 1
 avgs <- list()
-#avgs[["Ladder"]] <- LHSP$Ladder
-avgs <- list()
-for (i in 3:length(LHSP)){
+
+for (i in 3:length(project_data)){ #If data does not begin @ third column change accordingly
   name = (paste0("X", num, sep =""))
+  name2 = (paste0("X", num, "_mean_line", sep =""))
   if (i%%replicates == 0) {
-    avgs[name] <- (LHSP[i] + LHSP[i+1] + LHSP[i+2])/3
+    avgs[name] <- (project_data[i] + project_data[i+1] + project_data[i+2]) / 3 #If there are more/less than 3 replicates change accordingly
     cbind(avgs, name)
     num = num + 1
     }
 }
+#avgs[["Ladder"]] <- project_data$Ladder ######## figure out how to add to data frame not list
 avgs <- data.frame(matrix(unlist(avgs), nrow=length(avgs$X1), byrow=F)) #Convert data from list to dataframe
 ```
 
 
 ```{r Get mean of counts for each ladder position}
 
+#project_data <- mutate(project_data, X1wghted = (avgs$X1 * project_data$Ladder) )
+#project_data$X1mean <- sum(project_data$X1wghted)/sum(avgs$X1)
 
-#LHSP <- mutate(LHSP, X1wghted = (avgs$X1 * LHSP$Ladder) )
-#LHSP$X1mean <- sum(LHSP$X1wghted)/sum(avgs$X1)
+#a <- get_mean(project_data$Ladder, avgs$X6)
+#b<-sum(a$weighted)
 
-#LHSP <- mutate(LHSP, X2wghted = (avgs$X2 * LHSP$Ladder) )
-#LHSP$X2mean <- sum(LHSP$X2wghted)/sum(avgs$X2)
-
-#LHSP <- mutate(LHSP, X9wghted = (avgs$X9 * LHSP$Ladder) )
-#LHSP$X9mean <- sum(LHSP$X9wghted)/sum(avgs$X9)
-
-
+mean1 <- log10(get_mean(project_data$Ladder, avgs$X6))
+median1 <- log10(get_median(project_data$Ladder, avgs$X6))
 
 ggplot() +
-  geom_density(aes(x=LHSP$Ladder, y=avgs$X1), fill="blue", stat="identity", alpha=.3) +
-  geom_density(aes(x=LHSP$Ladder, y=avgs$X2), fill="red", stat="identity", alpha=.3) +
-  geom_density(aes(x=LHSP$Ladder, y=avgs$X9), fill="green", stat="identity", alpha=.3) +
-  #geom_vline(aes(xintercept = LHSP$X1mean, color = "blue")) +
-  #geom_vline(aes(xintercept = LHSP$X2mean, color = "red")) +
-  #geom_vline(aes(xintercept = LHSP$X9mean, color = "green")) +
-  xlab("Ladder position") +
+  geom_density(aes(x=log10(project_data$Ladder), y=avgs$X1), fill="red", stat="identity", alpha=.3) +
+  geom_density(aes(x=log10(project_data$Ladder), y=avgs$X6), fill="blue", stat="identity", alpha=.3) +
+  #geom_density(aes(x=log10(project_data$Ladder), y=avgs$X9), fill="red", stat="identity", alpha=.3) +
+
+  geom_vline(aes(xintercept = mean1, color = "red")) +
+  geom_vline(aes(xintercept = median1, color = "blue")) +
+
+  
+  labs(fill = "Indi") +
+  xlab("log10 Ladder position") +
   ylab("Count") +
   theme_cowplot()
 ```
 
 
-```{r}
-gen_plot <- function(param) {
-  
-  colors = c()
-for (i in param)  {
- p<- ggplot() +
-    geom_density(aes(x=avgs$Ladder, y=i), stat="identity", alpha=.3)
-  
-}
 
-    
-return(p)
-  
+```{r bin}
+if (!require("e1071")) install.packages("e1071"); library(e1071)
+if (!require("psych")) install.packages("psych"); library(psych)
+s<-skim(avgs)
+s
+cat(s$numeric.mean[1])
+
+median <-s$numeric.p50
+cat("median:", median)
+
+describe(avgs$X1)
+
+```
+
+
+#I need to write why we need to do this shit
+```{r get mean function}
+#How to use: assign to a variable (mean1 <- get_mean(DATA$LADDER, DATA$COLUMN)
+#Will need to log10 the variable
+#Variable will represent the float actual mean
+get_mean <- function(ladder, column) {
+  weighted = (column * ladder)
+  mean <- sum(weighted)/sum(column)
+  return (mean)
+}
+```
+
+
+```{r get median function}
+#How to use: assign to a variable (median1 <- get_median(DATA$LADDER, DATA$COLUMN)
+#Will need to log10 the variable
+#Variable will represent the actual median
+
+get_median <- function(ladder, column) {
+  full <- list()
+  for (i in 1:length(ladder)) {
+    adjust = floor(column[i])
+    for (n in 1:adjust) {
+      full <- list.append(full, ladder[i])}}
+  median_index = length(full) / 2
+  if (median_index != 0) {
+    median_index = median_index + 0.5
+    return (full[median_index])}
+  else {
+    return (full[median_index])}
 }
 
 ```
 
 
 ```{r}
-
-a <- list("a", "b")
-```
-
-
-
-
-
-
-
-
-```{r}
-ladder = (LHSPt[2,])
-xx = (LHSPt[3,])
-yy = (LHSPt[9,])
-zz = (LHSPt[5,])
+ladder = (project_datat[2,])
+xx = (project_datat[3,])
+yy = (project_datat[9,])
+zz = (project_datat[5,])
 
 ggplot() +
  geom_density(aes(x=ladder, y=xx), fill="blue", stat="identity", alpha=.3) +
