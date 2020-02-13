@@ -1,8 +1,8 @@
 ---
 title: "Group Project 1"
 subtitle: "Biology 368/664 Bucknell University"
-output: html_notebook
-author: Prof. Ken Field
+output: github_document
+author: Brenna, Fallon, Robert
 date: 27 Jan 2020
 ---
 
@@ -20,7 +20,9 @@ if(!require("skimr")) install.packages("skimr"); library(skimr)
 if(!require("psych")) install.packages("psych"); library(psych)
 ```
 
-Today, we are working with the telomere distributions of nutritionally restricted Leach's Storm-petrels. This is one treatment group of an experiment that sought to examine the effects of nutritional restriction and supplementation on telomere distrubtion and subsequent implications on longevity. This is only one of the treatment groups - the restricted birds.
+Today, we are working with the telomere distributions of nutritionally restricted Leach's Storm-petrels. This is one treatment group of an
+experiment that sought to examine the effects of nutritional restriction and supplementation on telomere distrubtion and subsequent
+implications on longevity. This is only one of the treatment groups - the restricted birds.
 
 ```{r read in data to project_data}
 project_data <- read.csv("G1.LHSPele.csv")
@@ -37,6 +39,7 @@ statistics such as mean and median.
 # How to use: assign to a variable (mean1 <- get_mean(DATA$LADDER, DATA$COLUMN)
 # May need to log10 the variable
 # Variable will represent the float actual mean
+
 get_mean <- function(ladder, counts) {
   weighted <- (counts * ladder)
   mean <- sum(weighted)/sum(counts)

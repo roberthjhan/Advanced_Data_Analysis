@@ -56,12 +56,12 @@ avgs <- data.frame(matrix(unlist(avgs), nrow=length(avgs$X1), byrow=F)) #Convert
 #a <- get_mean(project_data$Ladder, avgs$X6)
 #b<-sum(a$weighted)
 
-mean1 <- log10(get_mean(project_data$Ladder, avgs$X6))
-median1 <- log10(get_median(project_data$Ladder, avgs$X6))
+mean1 <- log10(get_mean(project_data$Ladder, avgs$X1))
+median1 <- log10(get_median(project_data$Ladder, avgs$X1))
 
 ggplot() +
   geom_density(aes(x=log10(project_data$Ladder), y=avgs$X1), fill="red", stat="identity", alpha=.3) +
-  geom_density(aes(x=log10(project_data$Ladder), y=avgs$X6), fill="blue", stat="identity", alpha=.3) +
+  #geom_density(aes(x=log10(project_data$Ladder), y=avgs$X6), fill="blue", stat="identity", alpha=.3) +
   #geom_density(aes(x=log10(project_data$Ladder), y=avgs$X9), fill="red", stat="identity", alpha=.3) +
 
   geom_vline(aes(xintercept = mean1, color = "red")) +
@@ -92,7 +92,7 @@ describe(avgs$X1)
 
 
 #I need to write why we need to do this shit
-```{r get mean function}
+```{r Get mean function}
 #How to use: assign to a variable (mean1 <- get_mean(DATA$LADDER, DATA$COLUMN)
 #Will need to log10 the variable
 #Variable will represent the float actual mean
@@ -104,7 +104,7 @@ get_mean <- function(ladder, column) {
 ```
 
 
-```{r get median function}
+```{r Get median function}
 #How to use: assign to a variable (median1 <- get_median(DATA$LADDER, DATA$COLUMN)
 #Will need to log10 the variable
 #Variable will represent the actual median
@@ -118,12 +118,17 @@ get_median <- function(ladder, column) {
   median_index = length(full) / 2
   if (median_index != 0) {
     median_index = median_index + 0.5
-    return (full[median_index])}
+    return (as.numeric(as.character(unlist((full[median_index])))))}
   else {
-    return (full[median_index])}
+    return (as.numeric(as.character(unlist((full[median_index])))))}
 }
-
 ```
+
+
+
+
+
+
 
 
 ```{r}
