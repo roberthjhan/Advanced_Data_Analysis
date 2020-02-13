@@ -29,35 +29,46 @@ project_data <- read.csv("G1.LHSPele.csv")
 
 Here are some functions created for this project that we will need to use, more on that later.
 
-#I need to write why we need to do this shit
+The data provided gives counts of telomeres (represented by optical density) at different points on a gel (distance given by a ladder). 
+Because individual points have already been summed, we cannot treat the dataset as we might normally do in R. Summary statistics will
+treat the values for each test as values rather than counts. Therefore, we need to create our own methods for generating summary
+statistics such as mean and median.
 ```{r Get mean function}
-#How to use: assign to a variable (mean1 <- get_mean(DATA$LADDER, DATA$COLUMN)
-#Will need to log10 the variable
-#Variable will represent the float actual mean
-get_mean <- function(ladder, column) {
-  weighted = (column * ladder)
-  mean <- sum(weighted)/sum(column)
+# How to use: assign to a variable (mean1 <- get_mean(DATA$LADDER, DATA$COLUMN)
+# May need to log10 the variable
+# Variable will represent the float actual mean
+get_mean <- function(ladder, counts) {
+  weighted <- (counts * ladder)
+  mean <- sum(weighted)/sum(counts)
   return (mean)}
 ```
 
 The get_median function will likely take a while to run. As mentioned earlier the raw data is actually in a summarized form. Counts are 
-already calculated so this function needs to basically recreate the uncounted data
+already calculated so this function needs to basically recreate the uncounted data then find the median by division. The get_median
+function accepts the parameters ladder and counts. The function then iterates through ladder and adds the ladder value to a list n times,
+where n is the associated number in counts. When the list is complete a variable called median_index is intialized as the length of the
+list / 2. If the list is odd the modulus of the operation will not be 0. Using that logic we can define two conditions for whether the
+list length is odd or even. If odd returns the middle index of the list. If even, average of the two middle members in the list.
 ```{r Get median function}
-#How to use: assign to a variable (median1 <- get_median(DATA$LADDER, DATA$COLUMN) )
-#Will need to log10 the variable
-#Variable will represent the actual median
-get_median <- function(ladder, column) {
+# How to use: assign to a variable (ie. median1 <- get_median(DATA$LADDER, DATA$COLUMN) )
+# May need to log10 the variable later on
+# Variable will represent the actual median
+
+get_median <- function(ladder, counts) {
   full <- list()
   for (i in 1:length(ladder)) {
-    adjust = floor(column[i])
+    adjust <- floor(counts[i])
     for (n in 1:adjust) {
       full <- list.append(full, ladder[i])}}
-  median_index = length(full) / 2
-  if (median_index != 0) {
-    median_index = median_index + 0.5
-    return (as.numeric(as.character(unlist((full[median_index])))))}
+  
+  mod <- (length(full) %% 2)
+  median_index <- length(full) / 2
+  if (mod != 0) {
+    median_index <- median_index + 0.5
+    return (as.numeric(as.character(unlist((full[median_index])))))
+    }
   else {
-    return (as.numeric(as.character(unlist((full[median_index])))))}}
+    return ((as.numeric(as.character(unlist((full[median_index])))) + as.numeric(as.character(unlist((full[median_index + 1])))))/2)}} 
 ```
 
 
@@ -67,14 +78,12 @@ called "avgs" which contains the average telomere count at each point of the lad
 ```{r create a new dataset using means of replicates}
 replicates = 3 #Change if not accurate
 num = 1
-#avgs <- list()
 
 for (i in 3:length(project_data)){ #If data does not begin @ third column change accordingly
   name = (paste0("X", num, sep =""))
-  if (i%%replicates == 0) {
-    avgs[name] <- (project_data[i] + project_data[i+1] + project_data[i+2]) / replicates #If there are more/less than 3 replicates change accordingly
-    num = num + 1} }
-#avgs["Ladder"] <- project_data$Ladder ######## figure out how to add to data frame not list
+  if (i %% replicates == 0) {
+    avgs[name] <- (project_data[i] + project_data[i+1] + project_data[i+2]) / replicates #If more/less than 3 replicates change to match
+    num = num + 1}}
 avgs <- data.frame(matrix(unlist(avgs), nrow=length(avgs[[1]]), byrow=F)) #Convert data from list to dataframe
 avgs$Ladder = project_data$Ladder
 ```
@@ -127,20 +136,26 @@ ggplot(avgs) +
   ylab("count") +
   theme_cowplot()
 ```
-As you can see, means and medians give us very different visualizations of the data. Since our data is so right skewed, it doesn't make sense to rely on the mean as a proper descriptive statistic. Means are important descriptive statistics for normally distributed data; however, in this context with non-normally distributed data, it makes more sense to rely on medians. 
+As you can see, means and medians give us very different visualizations of the data. Since our data is so right skewed, it doesn't make
+sense to rely on the mean as a proper descriptive statistic. Means are important descriptive statistics for normally distributed data; 
+however, in this context with non-normally distributed data, it makes more sense to rely on medians. 
 
-In this dataset, if only given one value to represent an entire bird's telomere length, it is important that the value properly represents the bird. Otherwise, a false sense of health may be attributed to the bird. In this case, the mean is much higher than the median, which may falsely lead readers to believe that the bird has much longer telomeres that it does.  
+In this dataset, if only given one value to represent an entire bird's telomere length, it is important that the value properly represents
+the bird. Otherwise, a false sense of health may be attributed to the bird. In this case, the mean is much higher than the median, which 
+may falsely lead readers to believe that the bird has much longer telomeres that it does.  
 
 So since this data is skewed, a better representation is the median. 
 
-Many statistical tests that can compare means between treatment groups and thus tell us if they are significantly different from each other rely on the fact that the data are normally distributed. In order to use these tests, we must first transform the data to create a normal distribution using log10.
+Many statistical tests that can compare means between treatment groups and thus tell us if they are significantly different from each
+other rely on the fact that the data are normally distributed. In order to use these tests, we must first transform the data to create a 
+normal distribution using log10.
 
-Let's try to log10 transform the ladder in the avgs dataset for a more normal distribution and plot it. The code used to create the normalized dataset
-(normal) is a slightly modified version of the one used to create avgs earlier.
+Let's try to log10 transform the ladder in the avgs dataset for a more normal distribution and plot it. The code used to create the
+normalized dataset is a simple asignment.
 
 
 ```{r Normalize ladder}
-avgs$N_Ladder = log10(avgs$Ladder)
+avgs$N_Ladder <- log10(avgs$Ladder)
 ```
 
 Plot
@@ -149,15 +164,24 @@ mean1 <- log10(get_mean(avgs$Ladder, avgs$X1))
 ggplot(avgs) +
   geom_density(aes(x=N_Ladder, y=X1), color = "slateblue3", stat="identity", alpha=.3) +
   geom_vline(aes(xintercept = mean1), col='black', size=1) +
-  geom_vline(aes(xintercept = (get_median(N_Ladder, X1))), col='red', size=1) +
+  geom_vline(aes(xintercept = log10(get_median(Ladder, X1))), col='red', size=1) +
   ylab("Frequency") + 
   xlab("Kilobases") + 
   theme_cowplot()
 
-
+mean2 <- log10(get_mean(avgs$Ladder, avgs$X6))
+ggplot(avgs) +
+  geom_density(aes(x=N_Ladder, y=X6), color = "slateblue3", stat="identity", alpha=.3) +
+  geom_vline(aes(xintercept = mean2), col='black', size=1) +
+  geom_vline(aes(xintercept = log10(get_median(Ladder, X6))), col='red', size=1) +
+  ylab("Frequency") + 
+  xlab("Kilobases") + 
+  theme_cowplot()
 ```
 
-We can now overlay all nine individuals to see how they compare on this normalized scale. This can give us an idea of how different individuals are from each other within this dataset. It's important to note these are all individuals from the same treatment group; we expect them to have similar telomere distributions.
+We can now overlay all nine individuals to see how they compare on this normalized scale. This can give us an idea of how different
+individuals are from each other within this dataset. It's important to note these are all individuals from the same treatment group; we
+expect them to have similar telomere distributions.
 
 ```{r}
 ggplot(avgs) + 
@@ -175,8 +199,6 @@ ggplot(avgs) +
   theme_cowplot() 
 ```
 
-We can now run an anova test to see if these means are significantly different from each other. Since these are all birds of the same treatment group, we expect that the means will not be different from each other; however, if we were to compare these nutritionally restricted birds to others groups, we would likely see significant differences.
-
-
-
-
+We can now run an anova test to see if these means are significantly different from each other. Since these are all birds of the same
+treatment group, we expect that the means will not be different from each other; however, if we were to compare these nutritionally
+restricted birds to others groups, we would likely see significant differences.
