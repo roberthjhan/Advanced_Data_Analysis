@@ -17,7 +17,7 @@ if (!require("UsingR")) install.packages("UsingR"); library(UsingR)
 if (!require("cowplot")) install.packages("cowplot"); library(cowplot)
 if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
 if(!require("skimr")) install.packages("skimr"); library(skimr)
-if(!require("psych")) install.packages("psych"); library(psych)
+if(!require("rlist")) install.packages("rlist"); library(rlist)
 ```
 
 Today, we are working with the telomere distributions of nutritionally restricted Leach's Storm-petrels. This is one treatment group of an
@@ -65,7 +65,7 @@ get_median <- function(ladder, counts) {
       full <- list.append(full, ladder[i])}}
   
   mod <- (length(full) %% 2)
-  median_index <- length(full) / 2
+  median_index <- length(full) / 2 #modify to get quartiles
   if (mod != 0) {
     median_index <- median_index + 0.5
     return (as.numeric(as.character(unlist((full[median_index])))))
@@ -73,7 +73,6 @@ get_median <- function(ladder, counts) {
   else {
     return ((as.numeric(as.character(unlist((full[median_index])))) + as.numeric(as.character(unlist((full[median_index + 1])))))/2)}} 
 ```
-
 
 The dataset has replicate measurements of each individual. Since we are interested in the means, we will need to calculate the average
 optical density (analagous to telomere counts) of the individuals at different distances on the ladder. Here we create a new dataframe
@@ -104,23 +103,6 @@ ggplot(avgs) +
 ```
 
 As we can see, this data has a strong right skew, which we will soon discuss.
-
-
-####################### No longer needed use "avgs" ####################### 
-In order to see some descriptive statistics, we first want to narrow down our dataframe. The select function allows us to only look at the few variables we want to visualize. Here, we are only interested in the average values that we calculated and plotted above, so we will create a new dataset from them. The next line of code allows us to check that we selected the correct data.
-
-```{r}
-LHSP.concise <- select(LHSP.data, X1:X9)
-LHSP.concise
-```
-
-####################### Most of the descriptive statistics are not accurate due to the nature of the dataset ####################### 
-In order to get a better description of how our data is distributed, we use the describe function below from the package "psych". This lets us know important descriptive statistics like the mean and median. 
-
-```{r descriptive statistics}
-describe(avgs)
-```
-
 
 Here is a visual representation of the mean and median on our first bird (X1). The mean is shown in blue, and the median is shown in red
 Typically, telomere data is analyzed by looking at the average telomere length for an individual. However, as we know, with non-normally
@@ -205,3 +187,5 @@ ggplot(avgs) +
 We can now run an anova test to see if these means are significantly different from each other. Since these are all birds of the same
 treatment group, we expect that the means will not be different from each other; however, if we were to compare these nutritionally
 restricted birds to others groups, we would likely see significant differences.
+
+```
