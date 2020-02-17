@@ -1,0 +1,46 @@
+---
+title: "Homework 04"
+author: "Biology Student"
+date: "2/25/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading Libraries
+Use the following syntax to load any libraries that you need. This code will prevent errors that will interfere with knitting of the Rmd file.
+Also note that the `include=FALSE` option will prevent this code chunk from appearing in the markdown file.
+
+We will load the entire tidyverse library, which includes *dplyr*, *ggplot2*, *readr*, and other packages.
+
+```{r Load Libraries, include=FALSE}
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+```
+
+## Objectives
+
+For this assignment you will need to identify a dataset from a public data archive use it to conduct the following steps:
+- [ ] Data Wrangling
+- [ ] Data Exploration
+- [ ] Data Visualization
+- [ ] Hypothesis testing using a generalized linear model
+
+Your first step is to identify the dataset that you want to use and confirm that it is suitable for this assignment.
+1. Contains between 100 and 10,000 observations.
+2. Has a quantitative outcome variable.
+3. Measures 4 or more potential explanatory variables.
+
+## Public Data Archives
+
+You can find your dataset either by browsing a data archive or by finding a paper that includes the raw data as supplementary material (or links to a data archive).
+There are many specialized data archives (http://oad.simmons.edu/oadwiki/Data_repositories), but these are some general ones that include biology:
+
+- Dryad: http://www.datadryad.org/
+- Figshare: https://figshare.com/
+- Mendeley Data: https://data.mendeley.com/
+- TreeBASE: https://www.treebase.org
+- Zenodo: https://zenodo.org/
+- Dataverse: https://dataverse.harvard.edu/
+

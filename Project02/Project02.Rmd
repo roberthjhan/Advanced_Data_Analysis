@@ -1,0 +1,80 @@
+---
+title: "Group Project 2"
+subtitle: "Biology 368/664 Bucknell University"
+output: html_notebook
+author: Prof. Ken Field
+date: 17 Feb 2019
+---
+
+## Objectives
+
+1. Critically read a scientific paper and assess the evidence provided
+2. Reproduce the analysis for one of the main figures of the paper (HW4)
+3. Assess a published paper for issues with reproducibility and transparency
+4. Identify questionable research practices and describe appropriate methods to prevent them
+5. Complete a preregistration plan that SHOULD have been performed prior to conducting the study
+
+```{r Load Libraries, include=FALSE}
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+if (!require("knitr")) install.packages("knitr"); library(knitr)
+```
+
+
+## Choosing Papers
+
+Each student will rank their preferences for papers in lab on Monday Feb 17. You may want to browse the papers available and discuss them with your group partner prior to lab.
+
+```{r}
+dir("papers", pattern = "pdf", full.names = TRUE, ignore.case = TRUE)
+```
+
+## Groups
+
+We will work in pairs for this project, with each pair being different from the Project 1 groups.
+
+```{r echo=FALSE, results='asis'}
+Project2 <- read.csv("../../00-Syllabus/Biol364_664roster.csv", stringsAsFactors=FALSE)
+Project2$Group <- c("NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA")
+table(Project2$Group)
+kable(arrange(Project2, Group))
+```
+
+## Grading
+
+Each student will be expected to complete the following tasks to earn 85% of the points available for this assignment (21/25).
+
+- Read and discuss your paper with your group partner
+  + Focus on the methods and results
+  + For each conclusion evaluate the strength of the supporting evidence
+  + For HW4 obtain the data from the paper and reproduce one of the analyses
+- Complete the nr-reporting-summary.pdf checklist (open in Adobe Acrobat)
+  + If the copy in the Repo doesn't work, download form at https://www.nature.com/authors/policies/availability.html and open in Acrobat
+  + For any deficient items on the checklist, describe the information needed
+  + Refer to nr-reporting-life-sciences-research.pdf for guidelines
+- Determine if you could repeat the analysis that is most essential to conclusions of the paper
+  + If data or methods are not available, look for follow-up studies that provide the required details
+  + If follow-up studies are not available, describe the missing information needed to perform the analysis
+- For each Questionable Research Practice discussed in Fraser *et al*:
+  + Find evidence to exclude this QRP, or
+  + Describe steps that should have been taken to prevent this QRP (see Forstmeier *et al*)
+- Design a follow-up study to replicate the most crucial experiment
+  + Complete the PreregChallengeTemplate.Rmd form for this replication experiment
+- Present summary of reproducibility assessment in class
+
+Each group should use an **Acknowledgements** section to document the participation of each member and the collaboration within groups.
+Full credit for the assignment will require equal participation of each group member.
+
+
+
