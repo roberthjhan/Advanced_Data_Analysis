@@ -1,0 +1,394 @@
+---
+title: "Lab 06"
+author: "Biology Student"
+date: "20 Feb 2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading Libraries
+
+```{r Load Libraries, include=FALSE}
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+if (!require("dendextend")) install.packages("dendextend"); library(dendextend)
+if (!require("pheatmap")) install.packages("pheatmap"); library(pheatmap)
+if (!require("gplots")) install.packages("gplots"); library(gplots)
+if (!require("devtools")) install.packages("devtools"); library(devtools)
+```
+
+## Objectives for Lab 6
+
+1. Working with time series
+2. Clustering
+3. Dimension Reduction
+
+## Background
+
+We will be using the dataset from a Driven Data competition: 
+https://www.drivendata.org/competitions/44/dengai-predicting-disease-spread/
+
+The data for this competition comes from multiple sources aimed at supporting the Predict the Next Pandemic Initiative (https://www.whitehouse.gov/blog/2015/06/05/back-future-using-historical-dengue-data-predict-next-epidemic). 
+Dengue surveillance data is provided by the U.S. Centers for Disease Control and prevention, as well as the Department of Defense's Naval Medical Research Unit 6 and the Armed Forces Health Surveillance Center, in collaboration with the Peruvian government and U.S. universities. 
+Environmental and climate data is provided by the National Oceanic and Atmospheric Administration (NOAA), an agency of the U.S. Department of Commerce.
+
+The data is provided in two separate files:
+
+1. dengue_features_train: weekly weather and vegetation data for two cities
+2. dengue_labels_train: weekly number of dengue cases in each city
+
+There are two cities, San Juan, Puerto Rico and Iquitos, Peru, with test data for each city spanning 5 and 3 years respectively. The data for each city have been concatenated along with a city column indicating the source: *sj* for San Juan and *iq* for Iquitos. 
+
+```{r Read Data}
+dengue_features_train <- read_csv("https://s3.amazonaws.com/drivendata/data/44/public/dengue_features_train.csv")
+str(dengue_features_train)
+summary(dengue_features_train)
+dengue_labels_train <- read_csv("https://s3.amazonaws.com/drivendata/data/44/public/dengue_labels_train.csv")
+str(dengue_labels_train)
+summary(dengue_labels_train)
+```
+
+## Feature Descriptions
+
+You are provided the following set of information on a (year, weekofyear) timescale:
+
+(Where appropriate, units are provided as a _unit suffix on the feature name.)
+
+City and date indicators
+
+- city – City abbreviations: sj for San Juan and iq for Iquitos
+- week_start_date – Date given in yyyy-mm-dd format
+
+NOAA's GHCN daily climate data weather station measurements
+
+- station_max_temp_c – Maximum temperature
+- station_min_temp_c – Minimum temperature
+- station_avg_temp_c – Average temperature
+- station_precip_mm – Total precipitation
+- station_diur_temp_rng_c – Diurnal temperature range
+
+PERSIANN satellite precipitation measurements (0.25x0.25 degree scale)
+
+- precipitation_amt_mm – Total precipitation
+
+NOAA's NCEP Climate Forecast System Reanalysis measurements (0.5x0.5 degree scale)
+
+- reanalysis_sat_precip_amt_mm – Total precipitation
+- reanalysis_dew_point_temp_k – Mean dew point temperature
+- reanalysis_air_temp_k – Mean air temperature
+- reanalysis_relative_humidity_percent – Mean relative humidity
+- reanalysis_specific_humidity_g_per_kg – Mean specific humidity
+- reanalysis_precip_amt_kg_per_m2 – Total precipitation
+- reanalysis_max_air_temp_k – Maximum air temperature
+- reanalysis_min_air_temp_k – Minimum air temperature
+- reanalysis_avg_temp_k – Average air temperature
+- reanalysis_tdtr_k – Diurnal temperature range
+
+Satellite vegetation - Normalized difference vegetation index (NDVI) - NOAA's CDR Normalized Difference Vegetation Index (0.5x0.5 degree scale) measurements
+
+- ndvi_se – Pixel southeast of city centroid
+- ndvi_sw – Pixel southwest of city centroid
+- ndvi_ne – Pixel northeast of city centroid
+- ndvi_nw – Pixel northwest of city centroid
+
+## Separate Data by city
+
+Use dplyr to filter the data frame by city.
+Then check that the numbers of rows are what you expect. Rows are good! Data has been split and 
+
+```{r}
+sj_train_features <- dplyr::filter(dengue_features_train, city == "sj") 
+iq_train_features <- dplyr::filter(dengue_features_train, city == "iq")
+sj_train_labels   <- dplyr::filter(dengue_features_train, city == "sj")
+iq_train_labels   <- dplyr::filter(dengue_features_train, city == "iq")
+
+new_vars = c(nrow(sj_train_features), nrow(iq_train_features), nrow(sj_train_labels), nrow(iq_train_labels))
+for (i in new_vars) {
+  cat("rows: ", i, "\n")
+}
+#check
+
+
+```
+
+## Time Series and Calculations: clean up date and time to a readable format
+
+```{r}
+CurrentTime <- Sys.time()
+weekdays(CurrentTime)
+unclass(CurrentTime)  # Number of seconds since 1970-01-01
+CurrentDate <- Sys.Date()
+unclass(CurrentDate) # Number of days since 1970-01-01
+x <- as.Date("2012-01-01")
+y <- strptime("9 Jan 2011 11:34:21", "%d %b %Y %H:%M:%S")
+?strptime
+CurrentDate - x
+CurrentTime - y
+```
+
+Explore the week_start_date columns in the filtered data
+-It's very long!
+
+```{r}
+sj_train_features$week_start_date
+#iq_train_features$week_start_date
+```
+
+## Plotting Time Series Data
+
+```{r}
+ggplot(iq_train_features, aes(week_start_date, station_avg_temp_c)) + 
+  geom_line() +
+  xlab("Date") + 
+  ylab("Station Average Temp (C)") +
+  theme_minimal()
+```
+
+Use ggplot to visualize two categories on the same plot
+
+```{r}
+ggplot(dengue_features_train, aes(x = week_start_date, y = precipitation_amt_mm)) + 
+  geom_line(aes(color = city)) +
+  scale_color_manual(values = c("#00AFBB", "#E7B800")) +
+  theme_minimal()
+```
+
+## Decompose Time Series
+
+As you might expect, there is a seasonal rhythm to the precipitation data. 
+Built in to R there are some sophisticated ways to analyze the seasonal component of the variable: decompose()
+
+```{r}
+station_avg_temp_c.components <- decompose(select(iq_train_features, c(week_start_date, station_avg_temp_c)))
+```
+
+However these two locations are too close to the equator to give us a strong enough seasonal signal for decompose() to recognize!
+
+Hahah it's supposed to throw an error I need to start reading ahead.
+
+There is much that can be done with time series, including model fits and forecasting:
+https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
+
+## Clustering
+
+Next we will follow *Exploratory Data Analysis with R* Chapters 12 and 13 
+https://leanpub.com/exdata/read_full
+
+Unfortunately the Dengue dataset is not well-suited for clustering analysis. 
+So we will have to put it aside for now and use our good old friend iris.
+We will start with just two dimensions of the data, to assist us with visualization.
+
+```{r}
+data("iris")
+str(iris)
+ggplot(iris, aes(x=Petal.Length, y=Petal.Width, color=Species)) +
+  geom_point() +
+  theme_minimal()
+```
+
+It was cheating to use species, so now lets try to cluster the data based on the variables.
+
+```{r}
+hClustering <- data.frame(x=iris$Petal.Length, y=iris$Petal.Width) %>% dist %>% hclust
+plot(hClustering)
+```
+
+How many clusters are there?
+It depends on where you cut the tree. Change cuts of tree 4 vs 2. h corresponds to tree height
+```{r}
+ggplot(iris, aes(x=Petal.Length, y=Petal.Width, color=as.factor(cutree(hClustering, h=4)))) +
+  geom_point() +
+  scale_colour_discrete(name  ="Cluster") +
+  theme_minimal()
+ggplot(iris, aes(x=Petal.Length, y=Petal.Width, color=as.factor(cutree(hClustering, h=2)))) +
+  geom_point() +
+  scale_colour_discrete(name  ="Cluster") +
+  theme_minimal()
+```
+
+Now use all of the variables to try to come up with a better cluster. Feed in all dimensions but species?
+
+```{r}
+fullClustering <- iris %>% select(-Species) %>% dist %>% hclust
+plot(fullClustering)
+```
+
+```{r}
+ggplot(iris, aes(x=Petal.Length, y=Petal.Width, color=as.factor(cutree(fullClustering, h=4)))) +
+  geom_point() +
+  scale_colour_discrete(name  ="Cluster") +
+  theme_minimal()
+```
+
+## K-Means Clustering
+
+K-Means is an alternative clustering algorithm that starts with a fixed number of clusters and then determines the best way to fit the data to that number.
+
+```{r}
+kmeansObj <-iris %>% select(-Species) %>% kmeans(centers = 3)
+names(kmeansObj)
+kmeansObj$cluster
+
+```
+
+kmeans is more robust than hierarchical if you know how many clusters to expect
+```{r}
+ggplot(iris, aes(x=Petal.Length, y=Petal.Width, color=as.factor(kmeansObj$cluster))) +
+  geom_point() +
+  scale_colour_discrete(name  ="Cluster") +
+  theme_minimal()
+```
+
+Are the clusters identical from the two methods?
+Which better matches the species designations?
+
+## Heatmaps
+
+We can also explore the data using a heatmap. The rows are ordered based on the order of the hierarchical clustering (using the “complete” method). The colored bar indicates the species category each row belongs to. The color in the heatmap indicates the length of each measurement (from light yellow to dark red).
+
+In the heatmap we also see how the Setosa species has low petal values (in light yellow), but it is very difficult to see any clear distinction between the other two species.
+
+https://cran.r-project.org/web/packages/dendextend/vignettes/Cluster_Analysis.html divides each column by mean then standardizes
+
+```{r}
+iris2 <- iris[,-5]
+species_labels <- iris[,5]
+dend <- as.dendrogram(fullClustering)
+# Scale the entire matrix so that the heatmap colors are comparable between each variable
+scaled_iris <- iris2 %>% as.matrix %>% scale
+# Set annotation colors to true species
+ann_colors = list(Species = as.factor(iris$Species))
+iris.matrix <- as.matrix(scaled_iris)
+rownames(iris.matrix) <- c(1:150) # to annotate, matrix and ann_row must have same rownames
+ann_row = data.frame(Species = as.factor(iris$Species))
+rownames(ann_row) = rownames(iris.matrix)
+pheatmap(iris.matrix, 
+         cluster_cols = FALSE,
+         cutree_rows = 3,
+         annotation_row = ann_row, 
+         show_rownames = F
+         )
+```
+
+## Principal Component Analysis
+
+Adapted from: https://tgmstat.wordpress.com/2013/11/28/computing-and-visualizing-pca-in-r/#ref1
+
+We will be using PCA to reduce the dimensions of the iris dataset (4 continuous variables). 
+There are several R packages that can be used for PCA, but we will use function `prcomp` from the base `stats` package.
+
+PCA must be done on a matrix and it is best if it is scaled and centered (so that the different variables have the same scale and a mean of 0). 
+Log transforming the matrix is also recommended if it improves the normality. Log, it helps for Sepals, but not for Petals.
+
+```{r}
+
+shapiro.test(iris$Sepal.Length)
+shapiro.test(log(iris$Sepal.Length))
+shapiro.test(iris$Sepal.Width)
+shapiro.test(log(iris$Sepal.Width))
+shapiro.test(iris$Petal.Length)
+shapiro.test(log(iris$Petal.Length))
+shapiro.test(iris$Petal.Width)
+shapiro.test(log(iris$Petal.Width))
+```
+
+
+
+Break up data into principal componenets (Sepal length/width, Petal length/width). Number of Principal components is equal to variables 
+fed in. If everything contributes a lot your PCA failed, did not find the principal componenets.
+```{r}
+iris.log.matrix <- iris %>% 
+  select(-Species) %>%
+  transmute(log.Sepal.Length = log(Sepal.Length),
+            log.Sepal.Width = log(Sepal.Width),
+            Petal.Length = Petal.Length,
+            Petal.Width = Petal.Width)
+
+ir.pca <- prcomp(iris.log.matrix,
+                 center = TRUE,
+                 scale. = TRUE) 
+print(ir.pca)
+summary(ir.pca)
+str(ir.pca)
+
+
+
+```
+
+The print method returns the standard deviation of each of the four PCs (the square root of their eigenvalues), and their rotation (or loadings), which are the coefficients of the linear combinations of the continuous variables.
+The eigenvalues provide information of the variability in the data. The scores provide information about the structure of the observations. The loadings (or correlations) allow you to get a sense of the relationships between variables, as well as their associations with the extracted PCs.
+
+For more about the mathematics behind these values: https://www.datacamp.com/community/tutorials/pca-analysis-r
+
+The summary tells us how much of the variance that each PC captured. 
+This tells us that 73% of the variance was captured in just one PC and 96% in PC1 and PC2 combined!
+
+Now to plot the results.
+
+Note that the best PCA visualization is using the package ggbiplot, available on github:
+`library(devtools); install_github("vqv/ggbiplot"); library(ggbiplot)`
+
+biplot of PC1 and PC2
+```{r}
+scores = as.data.frame(ir.pca$x) # extract the scores of the PCA
+ggplot(data = scores, aes(x = PC1, y = PC2, label = as.factor(species_labels))) +
+  geom_hline(yintercept = 0, colour = "gray65") +
+  geom_vline(xintercept = 0, colour = "gray65") +
+  geom_text(colour = "dodgerblue", alpha = 0.8, size = 4) 
+
+biplot(ir.pca)
+```
+
+The biplot helps to show how the variables contributed to the principal components (and how they are correlated with each other).
+Here is a nice visualization that shows only those correlations. log(sepal.length) explains a little of PC2 but more of PC1.
+
+```{r}
+install_github("vqv/ggbiplot")
+library(ggbiplot)
+ggbiplot(ir.pca, obs.scale = 1, var.scale = 1, groups = species_labels, ellipse = TRUE, circle = TRUE)
+```
+circles are a 95% cluster
+ 
+## Correlation heatmaps
+
+As you can see from the PCA plots, some of these variables are highly correlated with each other. 
+We can look at this directly using a correlation matrix. 
+This will again require a package from github.
+
+```{r}
+install_github("kassambara/ggcorrplot")
+library(ggcorrplot)
+corr <- round(cor(iris.log.matrix), 1)
+print(corr)
+# Compute a matrix of correlation p-values
+p.mat <- cor_pmat(iris.log.matrix)
+print(p.mat)
+# Visualize the correlation matrix
+ggcorrplot(corr, hc.order = TRUE, type = "lower",
+     outline.col = "white", lab = TRUE)
+```
+
+For more examples of ggcorrplot: http://www.sthda.com/english/wiki/ggcorrplot-visualization-of-a-correlation-matrix-using-ggplot2
+
+# Visualization of Dengue Dataset
+
+Using one or more of the above visualizations, answer the question: 
+Which variables in the dengue_features_train data frame are likely to provide the most information about Dengue incidence?
+
+```{r}
+dengue_features_train %>%
+  dplyr::select(precipitation_amt_mm: station_precip_mm) %>%
+  as.matrix() -> dengue_matrix
+
+dcorr <- round(cor(dengue_matrix, use = "complete.obs"), 1)
+print(dcorr)
+# Compute a matrix of correlation p-values
+p.mat <- cor_pmat(log10(dengue_matrix))
+print(p.mat)
+# Visualize the correlation matrix
+ggcorrplot(dcorr, hc.order = TRUE, type = "lower",
+     outline.col = "white", lab = TRUE)
+```
+
