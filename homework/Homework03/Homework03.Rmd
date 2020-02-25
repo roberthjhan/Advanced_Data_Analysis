@@ -213,18 +213,10 @@ approximately the same with PhysActive: Yes having a slightly higher median. How
 Depressed: None is greater than that of both Depressed: Several and Most which supports the proposed causality between
 testosterone and depression. Since the median and IQR of of testosterone level by PhysActive does not show much
 meaningful information we can check the means as well. 
+```{r Boxplots for testosterone}
 
-Actually the boxplot codeblock won't knit and I can't figure out why. I've commented out the code and added the images to the working directory so that the boxplots will show and the file can be knitted as a temporary measure
-
-![Lost boxplot 1: Male Testosterone~PhysActive](Male1.png)
-
-![Lost boxplot 2: Male Testosterone~PhysActive](Male2.png)
-
-![Lost boxplot 3: Female... Nothing there!](Female.png)
-#```{r Boxplots for testosterone}
-
-NHANES_adult_male <- base::subset(NHANES_adult, (Sex == "Male"))
-NHANES_adult_female <- base::subset(NHANES_adult, (Sex == "Female"))
+NHANES_adult_male <- dplyr::filter(NHANES_adult, (Sex == "Male"))
+NHANES_adult_female <- dplyr::filter(NHANES_adult, (Sex == "Female"))
 
 ggplot(NHANES_adult_male) + 
   aes(x = PhysActive, y = (Testosterone)) +
@@ -252,7 +244,7 @@ ggplot(NHANES_adult_female) +
   xlab("Depressed") + 
   ylab("Testosterone level") +
   theme_cowplot()
-#```
+```
 
 When checking out the plotted means, a relatively small difference between PhysActive categories becomes apparent.
 That being said the 95% confidence interval does overlap a little bit It's difficult to predict what a t-test might

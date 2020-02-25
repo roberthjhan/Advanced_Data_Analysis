@@ -6,23 +6,21 @@ author: Brenna, Fallon, Robert
 date: 27 Jan 2020
 ---
 
----
-title: "LHSP Data Tutorial"
-output: html_document
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 if (!require("UsingR")) install.packages("UsingR"); library(UsingR)
 if (!require("cowplot")) install.packages("cowplot"); library(cowplot)
 if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
 if(!require("skimr")) install.packages("skimr"); library(skimr)
+if(!require("psych")) install.packages("psych"); library(psych)
 if(!require("rlist")) install.packages("rlist"); library(rlist)
 ```
 
-Today, we are working with the telomere distributions of nutritionally restricted Leach's Storm-petrels. This is one treatment group of an
-experiment that sought to examine the effects of nutritional restriction and supplementation on telomere distrubtion and subsequent
-implications on longevity. This is only one of the treatment groups - the restricted birds.
+Today, we are working with the telomere distributions of nutritionally restricted Leach's Storm-petrels. This is one 
+treatment group of an experiment that sought to examine the effects of nutritional restriction and supplementation on 
+telomere distrubtion and subsequent implications on longevity. This is only one of the treatment groups - the 
+restricted birds. We don't have other treatment groups to compare it do, but hypothesize that there will be normal 
+distrubtion within this group due to similar environmental conditions. 
 
 ```{r read in data to project_data}
 project_data <- read.csv("G1.LHSPele.csv")
@@ -31,41 +29,39 @@ project_data <- read.csv("G1.LHSPele.csv")
 
 Here are some functions created for this project that we will need to use, more on that later.
 
-The data provided gives counts of telomeres (represented by optical density) at different points on a gel (distance given by a ladder). 
-Because individual points have already been summed, we cannot treat the dataset as we might normally do in R. Summary statistics will
-treat the values for each test as values rather than counts. Therefore, we need to create our own methods for generating summary
-statistics such as mean and median.
+The data provided gives counts of telomeres (represented by optical density) at different points on a gel (distance 
+given by a ladder). Because individual points have already been summed, we cannot treat the dataset as we might 
+normally do in R. Summary statistics will treat the values for each test as values rather than counts. Therefore, we 
+need to create our own methods for generating summary statistics such as mean and median.
 ```{r Get mean function}
 # How to use: assign to a variable (mean1 <- get_mean(DATA$LADDER, DATA$COLUMN)
 # May need to log10 the variable
 # Variable will represent the float actual mean
-
 get_mean <- function(ladder, counts) {
   weighted <- (counts * ladder)
   mean <- sum(weighted)/sum(counts)
   return (mean)}
 ```
 
-The get_median function will likely take a while to run. As mentioned earlier the raw data is actually in a summarized form. Counts are 
-already calculated so this function needs to basically recreate the uncounted data then find the median by division. The get_median
-function accepts the parameters ladder and counts. The function then iterates through ladder and adds the ladder value to a list n times,
-where n is the associated number in counts. When the list is complete a variable called median_index is intialized as the length of the
-list / 2. If the list is odd the modulus of the operation will not be 0. Using that logic we can define two conditions for whether the
-list length is odd or even. If odd returns the middle index of the list. If even, average of the two middle members in the list.
+The get_median function will likely take a while to run. As mentioned earlier the raw data is actually in a summarized
+form. Counts are already calculated so this function needs to basically recreate the uncounted data then find the 
+median by division. The get_median function accepts the parameters ladder and counts. The function then iterates 
+through ladder and adds the ladder value to a list n times, where n is the associated number in counts. When the list 
+is complete a variable called median_index is intialized as the length of the list / 2. If the list is odd the modulus 
+of the operation will not be 0. Using that logic we can define two conditions for whether the list length is odd or 
+even. If odd returns the middle index of the list. If even, average of the two middle members in the list.
 ```{r Get median function}
 # How to use: assign to a variable (ie. median1 <- get_median(DATA$LADDER, DATA$COLUMN) )
 # May need to log10 the variable later on
 # Variable will represent the actual median
-
 get_median <- function(ladder, counts) {
   full <- list()
   for (i in 1:length(ladder)) {
     adjust <- floor(counts[i])
     for (n in 1:adjust) {
       full <- list.append(full, ladder[i])}}
-  
   mod <- (length(full) %% 2)
-  median_index <- length(full) / 2 #modify to get quartiles
+  median_index <- length(full) / 2
   if (mod != 0) {
     median_index <- median_index + 0.5
     return (as.numeric(as.character(unlist((full[median_index])))))
@@ -74,13 +70,15 @@ get_median <- function(ladder, counts) {
     return ((as.numeric(as.character(unlist((full[median_index])))) + as.numeric(as.character(unlist((full[median_index + 1])))))/2)}} 
 ```
 
-The dataset has replicate measurements of each individual. Since we are interested in the means, we will need to calculate the average
-optical density (analagous to telomere counts) of the individuals at different distances on the ladder. Here we create a new dataframe
-called "avgs" which contains the average telomere count at each point of the ladder for each individual.
+
+The dataset has replicate measurements of each individual. Since we are interested in the means, we will need to
+calculate the average optical density (analagous to telomere counts) of the individuals at different distances on the
+ladder. Here we create a new dataframe called "avgs" which contains the average telomere count at each point of the
+ladder for each individual.
 ```{r create a new dataset using means of replicates}
+avgs = list()
 replicates = 3 #Change if not accurate
 num = 1
-
 for (i in 3:length(project_data)){ #If data does not begin @ third column change accordingly
   name = (paste0("X", num, sep =""))
   if (i %% replicates == 0) {
@@ -91,82 +89,118 @@ avgs$Ladder = project_data$Ladder
 ```
 
 
-Exploratory data analysis for this dataset is a little different than it normally would be because counts have already been calculated. To
-see the distribution of the telomere sizes for a single individual we actually need to plot it. Using stat = "identity" allows us to tell
-R not to perform it's default counting methods for the visualization.
+Below, we calculate and store the bird means.
+
+```{r}
+mean1 <- get_mean(avgs$Ladder, avgs$X1)
+mean2 <- get_mean(avgs$Ladder, avgs$X2)
+mean3 <- get_mean(avgs$Ladder, avgs$X3)
+mean4 <- get_mean(avgs$Ladder, avgs$X4)
+mean5 <- get_mean(avgs$Ladder, avgs$X5)
+mean6 <- get_mean(avgs$Ladder, avgs$X6)
+mean7 <- get_mean(avgs$Ladder, avgs$X7)
+mean8 <- get_mean(avgs$Ladder, avgs$X8)
+mean9 <- get_mean(avgs$Ladder, avgs$X9)
+means <- c(mean1, mean2, mean3, mean4, mean5, mean6, mean7, mean8, mean9)
+means
+BirdID <- c("X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9")
+BirdID
+```
+
+We know that the means within this treatment group are relatively similar, which makes sense. The Shapiro test lets us 
+know that the mean telomere lengths are normally distributed. This is really important, especially given our small 
+sample size of 9. Proceeding with comparisons with other treatment can follow.
+```{r}
+median1 <- get_median(avgs$Ladder, avgs$X1)
+median2 <- get_median(avgs$Ladder, avgs$X2)
+median3 <- get_median(avgs$Ladder, avgs$X3)
+median4 <- get_median(avgs$Ladder, avgs$X4)
+median5 <- get_median(avgs$Ladder, avgs$X5)
+median6 <- get_median(avgs$Ladder, avgs$X6)
+median7 <- get_median(avgs$Ladder, avgs$X7)
+median8 <- get_median(avgs$Ladder, avgs$X8)
+median9 <- get_median(avgs$Ladder, avgs$X9)
+medians <- c(median1, median2, median3, median4, median5, median6, median7, median8, median9)
+medians
+shapiro.test(medians)
+simple.eda(medians)
+```
+
+Exploratory data analysis for this dataset is a little different than it normally would be because counts have already 
+been calculated. To see the distribution of the telomere sizes for a single individual we actually need to plot it. 
+Using stat = "identity" allows us to tell R not to perform it's default counting methods for the visualization.
+
+```{r}
+ggplot(avgs) +
+  geom_density(aes(x = Ladder, y = X1), fill="", color = "slateblue3", stat="identity", alpha=.3) +
+  ylab("Frequency") + xlab("Kilobases") +
+  theme_cowplot()
+```
+As we can see, this data has a strong right skew, which we will soon discuss.
+
+In order to get a better description of how our data is distributed, we use the describe function below from the 
+package "psych". This lets us know important descriptive statistics like the mean and median. However, due to the 
+nature of our data, these are not accurate representations of means and medians. That's because the y axis is a 
+frequency count rather than a simple variable.
+
+```{r descriptive statistics}
+describe(avgs)
+```
+
+Here is a visual representation of the mean and median on our first bird (X1). The mean is shown in black, and the 
+median is shown in grey. Typically, telomere data is analyzed by looking at the average telomere length for an 
+individual. However, as we know, with non-normally distrubted data, the average can often be misleading. 
+
+For this data, we are plotting frequencies. This means that we can't simply take the mean of our bird data, because it 
+would give us the mean counts at different spots in the ladder, rather than the mean telomere length itself. If we took
+the mean of the ladder, that would just give us the middle point of the ladder. In order to properly visualize the 
+mean, we have to account for the fact that this is a frequency distribution, as done below. 
 
 ```{r}
 ggplot(avgs) +
   geom_density(aes(x=Ladder, y=X1), fill="", color = "slateblue3", stat="identity", alpha=.3) +
-  ylab("Frequency") + xlab("Kilobases") +
-  theme_cowplot()
-```
-
-As we can see, this data has a strong right skew, which we will soon discuss.
-
-Here is a visual representation of the mean and median on our first bird (X1). The mean is shown in blue, and the median is shown in red
-Typically, telomere data is analyzed by looking at the average telomere length for an individual. However, as we know, with non-normally
-distrubted data, the average can often be misleading. 
-
-For this data, we are plotting frequencies. This means that we can't simply take the mean of our bird data, because it would give us the 
-mean counts at different spots in the ladder, rather than the mean telomere length itself. If we took the mean of the ladder, that would
-just give us the middle point of the ladder. In order to properly visualize the mean, we have to account for the fact that this is a
-frequency distribution, as done below. 
-
-```{r}
-ggplot(avgs) +
-  geom_density(aes(x=Ladder, y=X1), fill="", color = "black", stat="identity", alpha=.3) +
-  geom_vline(aes(xintercept = get_mean(Ladder, X1)), col='slateblue3', size=1) + 
-  geom_vline(aes(xintercept = get_median(Ladder, X1)), col='red', size=1) +
+  geom_vline(aes(xintercept = get_mean(Ladder, X1)), col='black', size=1) + 
+  geom_vline(aes(xintercept = get_median(Ladder, X1)), col='grey', size=1) +
   ylab("count") +
   theme_cowplot()
 ```
-As you can see, means and medians give us very different visualizations of the data. Since our data is so right skewed, it doesn't make
-sense to rely on the mean as a proper descriptive statistic. Means are important descriptive statistics for normally distributed data; 
-however, in this context with non-normally distributed data, it makes more sense to rely on medians. 
+As you can see, means and medians give us different visualizations of the data. Since our data is so right skewed, it 
+doesn't make sense to rely on the mean as a proper descriptive statistic. Means are important descriptive statistics 
+for normally distributed data; however, in this context with non-normally distributed data, it makes more sense to rely
+on medians. 
 
-In this dataset, if only given one value to represent an entire bird's telomere length, it is important that the value properly represents
-the bird. Otherwise, a false sense of health may be attributed to the bird. In this case, the mean is much higher than the median, which 
-may falsely lead readers to believe that the bird has much longer telomeres that it does.  
+In this dataset, if only given one value to represent an entire bird's telomere length, it is important that the value 
+properly represents the bird. Otherwise, a false sense of health may be attributed to the bird. In this case, the mean 
+is much higher than the median, which may falsely lead readers to believe that the bird has much longer telomeres that 
+it does.  
 
 So since this data is skewed, a better representation is the median. 
 
-Many statistical tests that can compare means between treatment groups and thus tell us if they are significantly different from each
-other rely on the fact that the data are normally distributed. In order to use these tests, we must first transform the data to create a 
-normal distribution using log10.
+Many statistical tests that can compare means between treatment groups and thus tell us if they are significantly 
+different from each other rely on the fact that the data are normally distributed. In order to use these tests, we must
+first transform the data to create a normal distribution using log10.
 
-Let's try to log10 transform the ladder in the avgs dataset for a more normal distribution and plot it. The code used to create the
-normalized dataset is a simple asignment.
-
+Let's try to log10 transform the ladder in the avgs dataset for a more normal distribution and plot it. The code used 
+to create the normalized dataset is a simple asignment.
 
 ```{r Normalize ladder}
 avgs$N_Ladder <- log10(avgs$Ladder)
 ```
 
-Plot
+Below is a normalized representation of the X1 telomeres. The mean is shown in black and the median is shown in grey. 
 ```{r}
-mean1 <- log10(get_mean(avgs$Ladder, avgs$X1))
+logmean1 <- log10(get_mean(avgs$Ladder, avgs$X1))
 ggplot(avgs) +
   geom_density(aes(x=N_Ladder, y=X1), color = "slateblue3", stat="identity", alpha=.3) +
-  geom_vline(aes(xintercept = mean1), col='black', size=1) +
-  geom_vline(aes(xintercept = log10(get_median(Ladder, X1))), col='red', size=1) +
-  ylab("Frequency") + 
-  xlab("Kilobases") + 
-  theme_cowplot()
-
-mean2 <- log10(get_mean(avgs$Ladder, avgs$X6))
-ggplot(avgs) +
-  geom_density(aes(x=N_Ladder, y=X6), color = "slateblue3", stat="identity", alpha=.3) +
-  geom_vline(aes(xintercept = mean2), col='black', size=1) +
-  geom_vline(aes(xintercept = log10(get_median(Ladder, X6))), col='red', size=1) +
   ylab("Frequency") + 
   xlab("Kilobases") + 
   theme_cowplot()
 ```
 
-We can now overlay all nine individuals to see how they compare on this normalized scale. This can give us an idea of how different
-individuals are from each other within this dataset. It's important to note these are all individuals from the same treatment group; we
-expect them to have similar telomere distributions.
+
+We can now overlay all nine individuals to see how they compare on this normalized scale. This can give us an idea of
+how different individuals are from each other within this dataset. It's important to note these are all individuals 
+from the same treatment group; we expect them to have similar telomere distributions.
 
 ```{r}
 ggplot(avgs) + 
@@ -183,9 +217,28 @@ ggplot(avgs) +
   xlab("Log(Kilobases)") + 
   theme_cowplot() 
 ```
-
+When comparing indivdual bird to individual bird, normalizing the data like this is important, but across treatment groups we only need to know that the middle values (means or medians) are normal.
 We can now run an anova test to see if these means are significantly different from each other. Since these are all birds of the same
 treatment group, we expect that the means will not be different from each other; however, if we were to compare these nutritionally
 restricted birds to others groups, we would likely see significant differences.
+
+```{r}
+shapiro.test(means)
+simple.eda(means)
+```
+
+
+In conclusion, we've worked to create a tutorial for Dr. Mark Haussmann's research lab for visualizing telomere length 
+distribution. We can effectively deal with this data by creating codes for proper means and medians. Normal 
+distrubutions between means and medians allow us to be confident that comparison between treatment groups will be 
+successful. 
+
+
+Doing statistical tests is a bit challenging for this dataset due to the way it has been set up. Though time consuming,
+the easiest thing to do may be to just recreate the dataset as a collection of data points rather than counts.
+
+```{r}
+
+
 
 ```
