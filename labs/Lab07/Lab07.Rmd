@@ -1,0 +1,114 @@
+---
+title: "Lab 7"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+# COVID-19
+
+## Resources for learning about COVID-19
+
+World Health Organization Q&A:
+https://www.who.int/news-room/q-a-detail/q-a-coronaviruses
+
+Situation Reports:
+https://experience.arcgis.com/experience/685d0ace521648f8a5beeeee1b9125cd
+
+## Datasets and Modeling
+
+World Health Organization data: 
+https://experience.arcgis.com/experience/685d0ace521648f8a5beeeee1b9125cd
+
+COVID-19 epidemiological data: 
+https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(20)30119-5/fulltext
+
+Disease Model:
+https://www.statnews.com/2020/02/14/disease-modelers-see-future-of-covid-19/
+
+https://art-bd.shinyapps.io/nCov_control/
+
+
+```{r Load Libraries, include=FALSE}
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+if (!require("UsingR")) install.packages("UsingR"); library(UsingR)
+if (!require("cowplot")) install.packages("cowplot"); library(cowplot)
+if (!require("e1071")) install.packages("e1071"); library(e1071)  
+#if (!require("ggridges")) install.packages("ggridges"); library(ggridges)  
+if (!require("ggjoy")) install.packages("ggjoy"); library(ggjoy)  
+
+```
+
+The datafile itself is in csv format and is of a decent size.
+```{r Import data}
+project_data <- read.csv("COVID19_2020_outside_Hubei.csv")
+```
+
+Check the data, make sure everything has been imported. 
+```{r Check data}
+str(project_data)
+cat("rows", nrow(project_data))
+cat("\ncolumns", ncol(project_data))
+
+head(project_data)
+tail(project_data)
+```
+
+```{r}
+df <- data.frame(Date=as.Date(character()),
+   Country = character(), 
+   Date_Conf = character(), 
+   Date_Admit = character(),
+   stringsAsFactors=FALSE) 
+
+
+for (i in length(project_data)){
+  country <- project_data[i]$country
+  admit <- project_data[i]$date_admission_hospital
+  conf <- project_data[i]$date_confirmation
+  
+  #if (!country %in% df$Country | !admit %in% df$Date_Admit | !conf %in% df$Date_Conf) {}
+  de <- list(Country = country, Date_Conf = conf, Date_Admit = admit)
+  df[nrow(df) + 1,] = rbind(df,de, stringsAsFactors=FALSE)
+}
+head(df)
+
+```
+
+
+```{r}
+cool_countries <- c("South Korea", "China", "Japan", "Iran", "Vietnam", "Italy")
+df <- dplyr::select(project_data, (country:date_confirmation))
+df <- dplyr::select(df, -(wuhan.0._not_wuhan.1.:date_onset_symptoms))
+df <- subset(df, country %in% cool_countries)
+df$date_confirmation <- as.Date(df$date_confirmation, format = "%d.%m.%Y") 
+df$date_admission_hospital <- as.Date(df$date_admission_hospital, format = "%d.%m.%Y")
+```
+ggplot(lincoln_weather, aes(x = `Mean Temperature [F]`, y = Month, fill = stat(x))) +
+  geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
+  scale_fill_viridis_c(name = "Temp. [F]", option = "C") +
+  labs(title = 'Temperatures in Lincoln NE in 2016')
+  
+  ggplot(iris, aes(x = Sepal.Length, y = Species)) +
+  geom_density_ridges(
+    jittered_points = TRUE, position = "raincloud",
+    alpha = 0.7, scale = 0.9
+
+```{r ridgeline plot}
+
+ggplot(df, aes(x = date_confirmation, y = country, height = ..density.., fill = stat(density))) +
+  geom_density_ridges_gradient(stat = "density", alpha = 0.1) +
+  scale_fill_viridis_c( option = "C") +
+  theme_cowplot()
+
+  
+```
+
+
+
+
+
+
+

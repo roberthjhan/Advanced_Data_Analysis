@@ -1,6 +1,6 @@
 ---
 title: "Homework 05"
-author: "Biology Student"
+author: "Rob Han"
 date: "2/25/2020"
 output: github_document
 ---
@@ -23,9 +23,14 @@ if (!require("e1071")) install.packages("e1071"); library(e1071)
 
 ```
 
+I recently found out that competitive pokemon battling is kind of a thing which is pretty cool and brings me back to when I was
+obsessed with pokemon in middle-school. When I was a kid I really wanted to be a gym leader... A pokemon gym leader. Many 
+pokemon gym leaders will follow a theme when it comes to picking their team members. So I wonder, can data analysis help me 
+choose what type my gym should be?
+
 Main Database With Generation and Legendary flag.
 
-Accessed from https://www.kaggle.com/abcsds/pokemon
+Accessed from *https://www.kaggle.com/abcsds/pokemon*
 
 ## Data import and checking
 
@@ -43,7 +48,6 @@ cat("\ncolumns", ncol(project_data))
 
 head(project_data)
 tail(project_data)
-project_data
 ```
 Checking out the dataset we can see that we have a number of variables which describe some basic information about each 
 Pokemon, notably their battle stats and Legendary status. According to the Pokemon company there are currently 807 Pokemon.
@@ -64,14 +68,7 @@ At this stage we can proceed to cut down the dataset to suit our purposes. Since
 I used when I was a kid we'll filter out the later generations of pokemon.
 ```{r Filter out the uncool pokemon}
 pokemon <- dplyr::filter(project_data, Generation <= 4)
-
-pokemon
 ```
-
-I recently found out that competitive pokemon battling is kind of a thing which is pretty cool and brings me back to when I was
-obsessed with pokemon in middle-school. When I was a kid I really wanted to be a gym leader... A pokemon gym leader. Many 
-pokemon gym leaders will follow a theme when it comes to picking their team members. So I wonder, can data analysis help me 
-choose what type my gym should be?
 
 In pokemon battles, being able to make the first move can often dictate the flow of the entire battle. Some people will opt for
 pokemon that can debuff the oponents team, but lets be honest overwhelming power is the way to go. Our opponent needs to 
@@ -92,7 +89,6 @@ shapiro.test(pokemon$Speed)
 skewness(pokemon$Attack)
 skewness(pokemon$Sp..Atk)
 skewness(pokemon$Speed)
-
 ```
 The Shapiro test returned results indicating that the hypothesis that the data is normally distributed should be rejected
 (Attack: 1.466e-07, Special Attack: 8.404e-11, Speed: 4.799e-06). Taking a look at the skew we can see that all of our 
@@ -124,13 +120,13 @@ there are a lot of types we should seperate into two or three subsets.
 https://stackoverflow.com/questions/5584597/how-to-filter-a-tables-row-based-on-an-external-list/53416497
 ```{r Group by type}
 bug_to_fighting <- c("Bug", "Dark", "Dragon", "Electric", "Fairy", "Fighting") 
-fighting_to_ground <- c("Fire", "Ghost", "Grass", "Ground", "Ice", "Normal")
+fire_to_normal <- c("Fire", "Ghost", "Grass", "Ground", "Ice", "Normal")
 posion_to_water <- c("Poison", "Psychic", "Rock", "Steel", "Water")
 # Filter out legendary pokemon
 non_legendary <- dplyr::filter(pokemon, Legendary == "False") 
 # Create subset df's
-Bug_Grass <- subset(non_legendary, Type.1 %in% bug_to_grass)
-Fight_Ground <- subset(non_legendary, Type.1 %in% fighting_to_ground)
+Bug_Grass <- subset(non_legendary, Type.1 %in% bug_to_fighting)
+Fight_Ground <- subset(non_legendary, Type.1 %in% fire_to_normal)
 Posion_Water <- subset(non_legendary, Type.1 %in% posion_to_water)
 
 #Recheck population distribution
@@ -219,7 +215,7 @@ and see what we have.
 Using data from the Weedle's cave challenge we can estimate the winrate ratio of each pokemon.
 https://stackoverflow.com/questions/5577727/is-there-an-r-function-for-finding-the-index-of-an-element-in-a-vector
 
-```{r Integrate Weedle's cave challenge data}
+```{r Integrate Weedles cave challenge data}
 # Load data
 battle_data <- read.csv("combats.csv")
 # Filter out later generation pokemon
@@ -253,8 +249,8 @@ for (i in 1:length(pokemon$WR)){
   }
 ```
 
-We now have simulated winrate data from the Weedle's cave challenge associated with our original pokemon dataset. Furthermore,
-the mega forms have been removed from the data set. What does this winrate data look like?
+We now have simulated winrate data from the Weedle's cave challenge associated with our original pokemon dataset. 
+Furthermore, the mega forms have been removed from the data set. What does this winrate data look like?
 
 ```{r}
 simple.eda(pokemon$WR)
@@ -285,13 +281,12 @@ ggplot(high_performers, aes(x = Speed, y = (WR), color = Type.1)) +
   theme_cowplot()
 ```
 
-Interestingly it seems that only dragon type pokemon benefit from increases in either speed, attack, or special attack stats.
-Looking closer, we see that the most pronounced benefit seems to come from a higher speed stat.
+Interestingly it seems that only dragon type pokemon benefit from increases in either speed, attack, or special attack
+stats. Looking closer, we see that the most pronounced benefit seems to come from a higher speed stat.
 
 
 To be honest, I never really saw myself as a Psychic, Ghost, or Grass gym leader. I really liked Water, Fire, Dragon, and
 Fighting pokemon so lets run the same modeling with those choices instead.
-
 ```{r Investigate personal preferences}
 choices <- c("Water", "Fire", "Dragon", "Fighting")
 my_choices <- subset(pokemon, Type.1 %in% choices)
@@ -328,7 +323,6 @@ speed_glm <- glm(WR ~ Speed, data = fighting)
 cat("Attack:", attack_glm$aic)
 cat("\nSpecial Attack:", sp_attack_glm$aic)
 cat("\nSpeed:", speed_glm$aic)
-
 ```
 The AIC results for the specific attributes I've chosen are not hugely different from one another (Attack: -27.48543, 
 Sp.Atack: -24.9825, Speed: -24.53929). The attack stat is 3 points lower than the others indicating a superior goodness of fit.
@@ -346,43 +340,23 @@ dropterm(fighting_fullglm)
 ```
 
 Lets try dropping the HP variable.
-
 ```{r}
 fighting_fullglm2 = glm(WR ~ Attack + Sp..Atk + Defense + Sp..Def + Speed, data = fighting)
 dropterm(fighting_fullglm2)
 ```
-
 
 ```{r}
 fighting_fullglm3 = glm(WR ~ Attack + Sp..Atk + Defense + Sp..Def, data = fighting)
 dropterm(fighting_fullglm3)
 ```
 
-You may have noticed that the difference in AIC between each term isn't that large. This isn't a surprising observation since
-the outcomes of the simulated pokemon battles were likely based on a calculation using pokemon stats. 
-
+You may have noticed that the difference in AIC between each term isn't that large. This isn't a surprising observation
+since the outcomes of the simulated pokemon battles were likely based on a calculation using pokemon stats. 
 
 ```{r}
 fighting_fullglm4 <- glm(WR ~ Attack + Defense + Sp..Def, data = fighting)
 dropterm((fighting_fullglm4))
-
 ```
 
-
-
-
-
-
-
-## Objectives
-
-For this assignment you will need to identify a dataset from a public data archive use it to conduct the following steps:
-- [ ] Data Wrangling
-- [ ] Data Exploration
-- [ ] Data Visualization
-- [ ] Hypothesis testing using a generalized linear model
-
-Your first step is to identify the dataset that you want to use and confirm that it is suitable for this assignment.
-1. Contains between 100 and 10,000 observations.
-2. Has a quantitative outcome variable.
-3. Measures 4 or more potential explanatory variables. At least one quantitative variable.
+Surprisingly (to me at least) it seems like the top three predictors for win rate with a fighting type pokemon are their
+attack, defense and special defense stats.

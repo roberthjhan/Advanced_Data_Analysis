@@ -1,0 +1,31 @@
+---
+title: "Lab 7"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+# COVID-19
+
+## Resources for learning about COVID-19
+
+World Health Organization Q&A:
+https://www.who.int/news-room/q-a-detail/q-a-coronaviruses
+
+Situation Reports:
+https://experience.arcgis.com/experience/685d0ace521648f8a5beeeee1b9125cd
+
+## Datasets and Modeling
+
+World Health Organization data: 
+https://experience.arcgis.com/experience/685d0ace521648f8a5beeeee1b9125cd
+
+COVID-19 epidemiological data: 
+https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(20)30119-5/fulltext
+
+Disease Model:
+https://www.statnews.com/2020/02/14/disease-modelers-see-future-of-covid-19/
+
+https://art-bd.shinyapps.io/nCov_control/
