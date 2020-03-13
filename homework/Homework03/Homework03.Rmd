@@ -215,8 +215,8 @@ testosterone and depression. Since the median and IQR of of testosterone level b
 meaningful information we can check the means as well. 
 ```{r Boxplots for testosterone}
 
-NHANES_adult_male <- dplyr::filter(NHANES_adult, (Sex == "Male"))
-NHANES_adult_female <- dplyr::filter(NHANES_adult, (Sex == "Female"))
+NHANES_adult_male <- dplyr::filter(NHANES_adult, (Gender == "Male"))
+NHANES_adult_female <- dplyr::filter(NHANES_adult, (Gender == "Female"))
 
 ggplot(NHANES_adult_male) + 
   aes(x = PhysActive, y = (Testosterone)) +
