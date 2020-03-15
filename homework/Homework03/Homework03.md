@@ -113,8 +113,7 @@ variables.
 
     ## Columns:  76
 
-Summary of
-    dataset.
+Summary of dataset.
 
     ##        ID           SurveyYr       Gender          Age          AgeDecade   
     ##  Min.   :51624   2009_10:5000   female:5020   Min.   : 0.00    40-49 :1398  
@@ -543,34 +542,48 @@ between testosterone and depression. Since the median and IQR of of
 testosterone level by PhysActive does not show much meaningful
 information we can check the means as well.
 
-Actually the boxplot codeblock won’t knit and I can’t figure out why.
-I’ve commented out the code and added the images to the working
-directory so that the boxplots will show and the file can be knitted as
-a temporary measure
+``` r
+NHANES_adult_male <- dplyr::filter(NHANES_adult, (Gender == "Male"))
+NHANES_adult_female <- dplyr::filter(NHANES_adult, (Gender == "Female"))
 
-![Lost boxplot 1: Male Testosterone~PhysActive](Male1.png)
+ggplot(NHANES_adult_male) + 
+  aes(x = PhysActive, y = (Testosterone)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
+  guides(alpha=FALSE) +
+  xlab("PhysActive") + 
+  ylab("Testosterone level") +
+  theme_cowplot()
+```
 
-![Lost boxplot 2: Male Testosterone~PhysActive](Male2.png)
+![](Homework03_files/figure-gfm/Boxplots%20for%20testosterone-1.png)<!-- -->
 
-![Lost boxplot 3: Female… Nothing there\!](Female.png) \#\`\`\`{r
-Boxplots for testosterone}
+``` r
+ggplot(NHANES_adult_male) + 
+  aes(x = Depressed, y = (Testosterone)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "blue") +
+  guides(alpha=FALSE) +
+  xlab("Depressed") + 
+  ylab("Testosterone level") +
+  theme_cowplot()
+```
 
-NHANES\_adult\_male \<- base::subset(NHANES\_adult, (Sex == “Male”))
-NHANES\_adult\_female \<- base::subset(NHANES\_adult, (Sex == “Female”))
+![](Homework03_files/figure-gfm/Boxplots%20for%20testosterone-2.png)<!-- -->
 
-ggplot(NHANES\_adult\_male) + aes(x = PhysActive, y = (Testosterone)) +
-geom\_boxplot(outlier.shape = NA) + geom\_point(alpha = 0.3, position =
-“jitter”, colour = “blue”) + guides(alpha=FALSE) + xlab(“PhysActive”)
-+ ylab(“Testosterone level”) + theme\_cowplot()
+``` r
+#Female shows nothing
+ggplot(NHANES_adult_female) + 
+  aes(x = PhysActive, y = (Testosterone)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(alpha = 0.3, position = "jitter", colour = "red") +
+  guides(alpha=FALSE) +
+  xlab("Depressed") + 
+  ylab("Testosterone level") +
+  theme_cowplot()
+```
 
-ggplot(NHANES\_adult\_male) + aes(x = Depressed, y = (Testosterone)) +
-geom\_boxplot(outlier.shape = NA) + geom\_point(alpha = 0.3, position =
-“jitter”, colour = “blue”) + guides(alpha=FALSE) + xlab(“Depressed”) +
-ylab(“Testosterone level”) + theme\_cowplot() \#Female shows nothing
-ggplot(NHANES\_adult\_female) + aes(x = PhysActive, y = (Testosterone))
-+ geom\_boxplot(outlier.shape = NA) + geom\_point(alpha = 0.3, position
-= “jitter”, colour = “red”) + guides(alpha=FALSE) + xlab(“Depressed”) +
-ylab(“Testosterone level”) + theme\_cowplot() \#\`\`\`
+![](Homework03_files/figure-gfm/Boxplots%20for%20testosterone-3.png)<!-- -->
 
 When checking out the plotted means, a relatively small difference
 between PhysActive categories becomes apparent. That being said the 95%
@@ -579,8 +592,7 @@ what a t-test might yield for these variables. Taking a look at the
 plotted means for testosterone level and Depressed suggests testosterone
 level decreases the more often a person is depressed. Once again there
 is overlap in the 95% confidence intervals so a statistical test could
-help clear things
-up.
+help clear things up.
 
 ``` r
 plotmeans((Testosterone) ~ PhysActive, data = NHANES_adult, xlab = "PhysActive", ylab = "Testosterone level")
@@ -648,8 +660,7 @@ performing a t-test. Taking a look at the second graphic which looks at
 hours slept and the Depressed variable, we see a general decrease in the
 mean hours slept as the Depressed variable “increases”. Confidence
 intervals for this plot are also pretty good so statistical analysis
-should fit the
-narrative.
+should fit the narrative.
 
 ``` r
 plotmeans(SleepHrsNight ~ PhysActive, data = NHANES_adult, xlab = "PhysActive", ylab = "Hours slept")
