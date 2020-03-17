@@ -1,6 +1,6 @@
 ---
 title: "Takehome Midterm"
-author: "Spectacular Student"
+author: "Rob Han"
 date: "04 Mar 2020"
 output:
   github_document:
@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 For the takehome midterm you will have 48 hours to complete the objectives listed below. The deadline for submission is 18 March 2020 at 2pm EST.
 
 Date/Time started: March 15, 2020 11:30 AM
-Date/Time completed:
+Date/Time completed: March 16, 2020 10:45 PM
 
 You will be graded on the following criteria:
 
@@ -33,7 +33,13 @@ Load all of your libraries in this code block. Indicate why each library is nece
 ```{r Load Libraries, include=FALSE}
 if (!require("MASS")) install.packages("MASS"); library(MASS)
 # MASS is needed for the negative binomial glm function glm.nb()
-
+if (!require("gridExtra")) install.packages("gridExtra"); library(gridExtra)
+if (!require("cowplot")) install.packages("cowplot"); library(cowplot)
+if (!require("UsingR")) install.packages("UsingR"); library(UsingR)
+if (!require("e1071")) install.packages("e1071"); library(e1071)  
+if (!require("devtools")) install.packages("devtools"); library(devtools)
+install_github("kassambara/ggcorrplot")
+library(ggcorrplot)
 if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
 # tidyverse is needed for ggplot2, readr, and dplyr
 # Always load tidyverse last so that its functions will not get masked by other packages
@@ -146,7 +152,21 @@ cat("\nNA's", sum(is.na(dengue_labels_train)))
 head(dengue_labels_train)
 tail(dengue_labels_train)
 ```
-VERIFICATION
+
+### Validate with at least one external data source
+We have a publication from the CDC stating San Juan reported had 4,677 diagnosed cases of dengue in 1998 our dataset
+when we filter for San Juan in 1998 says we have 4,595 cases which appears close enough to what was reported by the
+CDC.
+
+https://www.cdc.gov/mmwr/preview/mmwrhtml/00055624.htm
+```{r Validating}
+sanjuan1994 <- dplyr::filter(dengue_labels_train, year == "1998"&city == "sj")
+sum(sanjuan1994$total_cases)
+```
+
+### Merging the features and labels data frames
+
+Although there are dplyr functions for data frame merging, the base `merge()` function is easier to use.
 
 Taking a cursory look at the two data frames, it looks like the only column that needs to be merged is total_cases
 in dengue_labels_train. 
@@ -164,23 +184,20 @@ cat("\nNA's", sum(is.na(dengue_features_train)))
 head(dengue_features_train)
 tail(dengue_features_train)
 ```
-### Check the packaging
-
-### Run str()
-
-### Look at the top and the bottom of your data
-
-### Check your “n”s
-
-### Validate with at least one external data source
-
-### Merging the features and labels data frames
-
-Although there are dplyr functions for data frame merging, the base `merge()` function is easier to use.
 
 ### Dealing with the NAs
 
 Check out the `tidyr::fill()` function for one way to take care of NAs.
+
+Earlier we mentioned thatnthere are 548 NA's in the data frame. One way for dealing with these is the na.omit function
+which will remove rows from the dataset where NA's are present. After running the function, we end up with
+approximately 200 less rows than we started with.
+```{r deal with NA}
+dengue_features_train <- na.omit(dengue_features_train)
+head(dengue_features_train)
+nrow(dengue_features_train)
+```
+
 
 ## (2) What is the average number of cases of Dengue for each week of the year for each city?
 
@@ -188,6 +205,71 @@ Provide a publication-quality graphic to present this comparison.
 The graph should span a single year, with the average incidence for each week of the year. 
 You are encouraged to explore options, but only your final graph in this section will be used to evaluate this objective.
 Consider the most effective way to illustrate any trends or important comparisons within the data.
+
+In order to get the averages for each week we ought to filter out unnecessary data such as weather, then create a new
+dataset as the data frame with the averages will be a different size than the original one. Alternatively we could have
+used the dengue_labels_train dataset which has only the information we need for this visualization and no NA's.
+We can create the new dataframe with the calculated averages using the aggregate() function.
+
+https://stackoverflow.com/questions/23775683/calculate-average-value-over-multiple-years-for-each-hour-and-day
+```{r}
+dengue_simple <- dplyr::select(dengue_features_train, city, weekofyear, total_cases, everything())
+dengue_simple <- dplyr::select(dengue_simple, 1:3)
+head(dengue_simple)
+dengue_avg_week <- aggregate(dengue_simple$total_cases, by = list(dengue_simple$city, dengue_simple$weekofyear), mean)
+dengue_avg_week <- rename(dengue_avg_week, city = Group.1, weekofyear = Group.2, avg_cases = x)
+head(dengue_avg_week)
+```
+I thought a marked scatterplot would be best for this visualization as it will show individual datapoints and give a 
+better sense of possible trends than either a scatterplot or line plot alone. Checking out the visualization we see
+that cases of dengue increas towards the third quarter of the year and San Juan has higher dengue incidence than
+Iquitos throughout the entire year especially between weeks 25 and 50
+
+Note that 53 comes up as a week in the plot (line extends slightly past 52). I'm not sure why but at some points in the
+dataset a 53rd week was recorded. It's clear that some 52nd weeks may have been mislabeled. It's not a big
+deal and can be fixed.
+
+https://dplyr.tidyverse.org/reference/select.html
+```{r}
+ggplot(dengue_avg_week, aes(x = weekofyear, y = avg_cases, color = city)) +
+  geom_point() + 
+  geom_line() +
+  scale_x_continuous(breaks = round(seq(min(dengue_avg_week$weekofyear), max(dengue_avg_week$weekofyear), by = 3))) +
+  xlab("Week") +
+  ylab("Average number of dengue cases") +
+  theme_cowplot()
+```
+
+For the sake of not editing the original data we're going to create a new dataset with the fix. I suspect that for a 
+couple of the years week data was misinputted as 53 when it's supposed to be 52 since that's how it is in the csv file.
+With that in mind we will try to change values from 53 to 52. Since I'm not super sure about what's going on we will
+only use this modified dataset to revisualize the last figure in case there's a large change. in order to do this
+we'll use the replace() function to replace instances of 53 with 52.
+
+Alternatively if we didn't have a suspicion about the error we could have filtered out week 53 with the dplyr::filter()
+function.
+
+https://stackoverflow.com/questions/5824173/replace-a-value-in-a-data-frame-based-on-a-conditional-if-statement
+```{r removing 53rd week}
+no_53 <- dengue_simple
+no_53$weekofyear <- replace(no_53$weekofyear, no_53$weekofyear == 53,  52)
+
+no_53_df <- aggregate(no_53$total_cases, by = list(no_53$city, no_53$weekofyear), mean)
+no_53_df <- rename(no_53_df, city = Group.1, weekofyear = Group.2, avg_cases = x)
+head(no_53_df)
+
+ggplot(no_53_df, aes(x = weekofyear, y = avg_cases, color = city)) +
+  geom_line() + 
+  geom_point() +
+  scale_x_continuous(breaks = round(seq(min(no_53$weekofyear), max(no_53$weekofyear), by = 3))) +
+  xlab("Week") +
+  ylab("Average number of dengue cases") +
+  theme_cowplot()
+```
+
+In hindsight, the shape of the data doesn't look too different and the 53rd week might actually represent a 53rd week
+since 7 does not divide evenly into 365. Regardless, the replace() function is a really neat tool since otherwise I'd
+have had to create a for loop with logic to get the same result.
 
 ## (3) Data exploration of potential explanatory variables
 
@@ -197,11 +279,172 @@ Present a two or more publication-quality graphics to illustrate your most impor
 
 ### Exploration
 
+Lets take a look at a few variables in the context of their contribution to dengue incidence. We know that dengue is a 
+mosquito borne illness and mosquitos typically come out when the weather is warm so that could be a good starting
+point.
+
+First we'll check the distribtion of the data. From the Shapiro test, it looks like the data is not normally
+distributed (avg_t: p = 3.487e-16, min_t: p = 1.143e-10, max_t: p = 1.801e-11). All three variables have a left skew
+(avg_t: -0.622526, min_t: -0.2843803, max_t: -0.2714032). According to some sources a skewness between -0.8 and 0.8 
+is acceptable so we'll say the distribution is approximately symmetric.
+
+The log10 transformation did not appear to greatly improve the distribution so we will forego that.
+
+https://www.researchgate.net/post/What_is_the_acceptable_range_of_skewness_and_kurtosis_for_normal_distribution_of_data
+```{r Distribution check}
+simple.eda((dengue_features_train$station_avg_temp_c))
+simple.eda(dengue_features_train$station_min_temp_c)
+simple.eda(dengue_features_train$station_max_temp_c)
+
+shapiro.test((dengue_features_train$station_avg_temp_c))
+skewness(dengue_features_train$station_avg_temp_c)
+shapiro.test((dengue_features_train$station_min_temp_c))
+skewness(dengue_features_train$station_min_temp_c)
+shapiro.test((dengue_features_train$station_max_temp_c))
+skewness(dengue_features_train$station_max_temp_c)
+```
+
+We'll do something similar to earlier but apply the aggregate() function to every variable using city and week of year
+as grouping variables. First we'll remove year and week start date though because those won't give us meaningful 
+information.
+```{r Aggregate everything}
+dengue_features_train <- dplyr::select(dengue_features_train, -(year), -(week_start_date))
+avg_all <- aggregate(.~city + weekofyear, dengue_features_train, mean)
+head(avg_all)
+```
+
+Our visualization is not great, we can see some hints at a trend where increases in temperature increase the number of
+dengue cases. The shaded regions are from a nonbinomial glm using the MASS package.  
+We see a lot of data points fall outside of the shading so maybe this visualization isn't as informative as we hoped.
+
+https://ggplot2.tidyverse.org/reference/geom_smooth.html
+https://www.dummies.com/programming/r/how-to-round-off-numbers-in-r/
+https://stats.stackexchange.com/questions/164889/how-to-deal-with-non-integer-warning-from-negative-binomial-glm
+
+Perhaps other variables will present better results.
+```{r Plotting temperature data with dengue case data}
+data = avg_all
+x = data$reanalysis_avg_temp_k
+y = trunc(data$total_cases) # Truncate because glm.nb is expecting (whole number) counts here
+
+ggplot(avg_all, aes(x =  x, y = y, color = city)) +
+  geom_smooth(method = MASS::glm.nb) + 
+  geom_point() + 
+  scale_x_continuous(breaks = round(seq(min(avg_all$station_min_temp_c), max(avg_all$station_max_temp_c), by = 3))) +
+  xlab("Temperature (C)") +
+  ylab("Average number of dengue cases") +
+  theme_cowplot()
+```
+
+Now looking at humidity we see that San Juan has lower average humidity than Iquitos. This lower humidity may be 
+associated with higher incidence of dengue but we can't be sure yet. We still see a lot of variability here. This is 
+also a pretty strange looking graph so maybe the other measure of humidity will give something better.
+```{r checking humidity}
+data = avg_all
+x = data$reanalysis_relative_humidity_percent
+y = trunc(data$total_cases)
+
+ggplot(data, aes(x = x, y = y, color = city)) +
+  geom_smooth(method = MASS::glm.nb) + 
+  geom_point() +
+  xlab("Humidity (%)") +
+  ylab("Average dengue cases") +
+  theme_cowplot()
+```
+
+This visualization of humidity appears to show a stronger relationship between humidity and dengue incidence as an 
+positive trend is clearly evident.
+```{r checking humidity again}
+data = avg_all
+x = data$reanalysis_specific_humidity_g_per_kg 
+y = trunc(data$total_cases)
+
+ggplot(data, aes(x = x, y = y, color = city)) +
+  geom_smooth(method = MASS::glm.nb) + 
+  geom_point() +
+  xlab("Average humidity (g/kg)") +
+  ylab("Average dengue cases") +
+  theme_cowplot()
+```
+
+It's kinda interesting that when we look at humidity here we get an eerily similar visualization as we do when looking
+at the second humidity figure. Are the two related?
+
+```{r checking dewpoint temp}
+data = avg_all
+x = data$reanalysis_dew_point_temp_k
+y = trunc(data$total_cases)  
+ggplot(data, aes(x = x, y = y, color = city)) +
+  geom_smooth(method = MASS::glm.nb) + 
+  geom_point() +
+  xlab("Average dewpoint temperature (K)") +
+  ylab("Average dengue cases") +
+  theme_cowplot()
+```
+
+Unsurprisingly they are at least somewhat related. We see that increases in humidity are correlated with increases in
+dewpoint temperature. 
+```{r Comparing humidity and dewpoint temp, warning = FALSE}
+data = avg_all
+x = data$reanalysis_dew_point_temp_k
+y = trunc(data$reanalysis_specific_humidity_g_per_kg)
+ggplot(data, aes(x = x, y = y, color = city)) +
+  geom_smooth(method = MASS::glm.nb) + 
+  geom_point() +
+  xlab("Average dewpoint temperature (K)") +
+  ylab("Average humidity (g/kg)") +
+  theme_cowplot()
+```
+
+Looking at precipitation isn't very informative, we barely capture any of the datapoints from iq.
+```{r checking precipitation}
+data = avg_all
+x = data$reanalysis_precip_amt_kg_per_m2
+y = trunc(data$total_cases)  
+ggplot(data, aes(x = x, y = y, color = city)) +
+  geom_smooth(method = MASS::glm.nb) + 
+  geom_point() +
+  xlab("Precipitation (kg/m2)") +
+  ylab("Average dengue cases") +
+  theme_cowplot()
+```
+
+All in all we see that San Juan has more cases of dengue than Izquitos. There are some subtle relationships between a
+few of the meteorological variables such as temperature and wetness and the number of dengue cases but they are as I 
+said subtle.
+
 Explore the data here.
 
 ### Presentation
 
-Present your most important results here.
+Most important findings repeated from above.
+
+```{r Plotting temperature data with dengue case data 2}
+data = avg_all
+x = data$reanalysis_avg_temp_k
+y = trunc(data$total_cases) # Truncate because glm.nb is expecting (whole number) counts here
+
+ggplot(avg_all, aes(x =  x, y = y, color = city)) +
+  geom_smooth(method = MASS::glm.nb) + 
+  geom_point() + 
+  scale_x_continuous(breaks = round(seq(min(avg_all$station_min_temp_c), max(avg_all$station_max_temp_c), by = 3))) +
+  xlab("Temperature (C)") +
+  ylab("Average number of dengue cases") +
+  theme_cowplot()
+```
+
+```{r checking humidity again 2}
+data = avg_all
+x = data$reanalysis_specific_humidity_g_per_kg 
+y = trunc(data$total_cases)
+
+ggplot(data, aes(x = x, y = y, color = city)) +
+  geom_smooth(method = MASS::glm.nb) + 
+  geom_point() +
+  xlab("Average humidity (g/kg)") +
+  ylab("Average dengue cases") +
+  theme_cowplot()
+```
 
 ## (4) Dengue incidence model
 
@@ -212,16 +455,214 @@ This model is calculated separately for San Jose and Iquitos and only uses the f
  - reanalysis_dew_point_temp_k 
  - station_avg_temp_c
  - station_min_temp_c
+ 
+ 
 The code for the Benchmark model uses a machine learning approach to optimize the model.
 You should use the model selection approach that we have used in BIOL 364, instead.
 The total_cases outcome variable is a count - statistically it is a binomial variable that has been summed up over a period of time (a week, in this case). 
 Generalized linear models should use a negative binomial distribution (as opposed to a Gaussian distribution, which is what `glm()` assumes) for this type of data.
 To fit a negative binomial distribution use `glm.nb()` from the package `MASS` instead of the `glm()` function from `stats`.
+
+Like https://shaulab.github.io/DrivenData/DengAI/Benchmark.html described in their correlation plot, we see that 
+total_cases does not have much correlation with the other variables. However, when we apply the correlation plot to
+the averaged dataset we find strongish correlations to minimum air temperatures.
+```{r}
+dengue_features_train %>%
+  dplyr::select(precipitation_amt_mm: total_cases) %>%
+  as.matrix() -> dengue_matrix
+
+dcorr <- round(cor(dengue_matrix, use = "complete.obs"), 1)
+print(dcorr)
+# Compute a matrix of correlation p-values
+p.mat <- cor_pmat(log10(dengue_matrix))
+print(p.mat)
+# Visualize the correlation matrix
+ggcorrplot(dcorr, hc.order = TRUE, type = "lower",
+     outline.col = "white", lab = TRUE)
+
+avg_all %>%
+  dplyr::select(precipitation_amt_mm: total_cases) %>%
+  as.matrix() -> dengue_avg_matrix
+
+dcorr_avg <- round(cor(dengue_avg_matrix, use = "complete.obs"), 1)
+print(dcorr_avg)
+# Compute a matrix of correlation p-values
+p_avg.mat <- cor_pmat(log10(dengue_avg_matrix))
+print(p_avg.mat)
+# Visualize the correlation matrix
+ggcorrplot(dcorr_avg, hc.order = TRUE, type = "lower",
+     outline.col = "white", lab = TRUE)
+```
  
+I thought it would be nice to reproduce the other correlation figure from the link but its not great so we'll ignore
+it.
+```{r total_cases correlations}
+sort(dcorr[17,-17]) %>%  
+  as.data.frame %>% 
+  `names<-`('correlation') %>%
+ggplot(aes(x = reorder(row.names(.), -correlation), y = correlation, fill = correlation)) + 
+  geom_bar(stat='identity', colour = 'black') + scale_fill_continuous(guide = FALSE) + scale_y_continuous(limits = c(-.15,.25)) +
+  labs(title = 'Correlations', x = NULL, y = NULL) + coord_flip() -> cor1
+
+sort(dcorr_avg[17,-17]) %>%  
+  as.data.frame %>% 
+  `names<-`('correlation') %>%
+ggplot(aes(x = reorder(row.names(.), -correlation), y = correlation, fill = correlation)) + 
+  geom_bar(stat='identity', colour = 'black') + scale_fill_continuous(guide = FALSE) + scale_y_continuous(limits = c(-.15,.25)) +
+  labs(title = 'Avgs Correlations', x = NULL, y = NULL) + coord_flip() -> cor2
+
+grid.arrange(cor1, cor2, nrow = 1)
+```
+
+
+Lets do a cursory glm of some suspected variables as predictors. Earlier we posed temperature as a possible predictor 
+so we'll run one with that. We'll also look at minimum air temperature and specific humidity which we identified from 
+the correlation plots. We'll do the glm calculations using glm.nb() from MASS because the data is nonbinomial.
+```{r}
+avg_t_glm <- glm.nb(total_cases ~ (reanalysis_air_temp_k), data = dengue_features_train)
+avg_t_glm2 <- glm.nb(trunc(total_cases) ~ (reanalysis_air_temp_k), data = avg_all)
+
+min_t_glm <- glm.nb(total_cases ~ (reanalysis_min_air_temp_k), data = dengue_features_train)
+min_t_glm2 <- glm.nb(trunc(total_cases) ~ (reanalysis_min_air_temp_k), data = avg_all)
+
+hum_glm <- glm.nb(total_cases ~ (reanalysis_specific_humidity_g_per_kg), data = dengue_features_train)
+hum_glm2 <- glm.nb(trunc(total_cases) ~ (reanalysis_specific_humidity_g_per_kg), data = avg_all)
+```
+
+Looking at our results we see that the avg min temp model is the most parsimonious fit from both the original merged
+dengue dataset and the averaged dataset.
+```{r}
+cat("\ntemp:", avg_t_glm$aic)
+cat("\nmin temp:", min_t_glm$aic)
+cat("\nspecific humidity:", hum_glm$aic)
+
+cat("\navg temp:", avg_t_glm2$aic)
+cat("\navg min temp:", min_t_glm2$aic)
+cat("\navg specific humidity:", hum_glm2$aic)
+```
+
+When we actual take a look at the model for this we get some pretty interesting graphs. With the averaged data we see a
+pretty clear trend where higher avg min temperature is associated with greater average dengue incidence.
+```{r nb.glm model for avg min temp}
+data = dengue_features_train
+x = data$reanalysis_min_air_temp_k
+y = trunc(data$total_cases)
+
+ggplot(data, aes(x = x, y = y, color = city)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = MASS::glm.nb) + 
+  xlab("Min temperature (K)") +
+  ylab("Dengue cases") +
+  theme_cowplot()
+
+data = avg_all
+x = data$reanalysis_min_air_temp_k
+y = trunc(data$total_cases)
+
+ggplot(data, aes(x = x, y = y, color = city)) +
+  geom_smooth(method = MASS::glm.nb) + 
+  geom_point() +
+  xlab("Average min temperature (K)") +
+  ylab("Average dengue cases") +
+  theme_cowplot()
+```
+
 ## (5) Extend the Benchmark model
 
 Consider and test the inclusion of additional explanatory variables to improve the Benchmark model. 
 
+The benchmark model uses only a few of all the variables so we'll use dropterm() to look at all the variables and see
+if we can find a preferred model that the benchmark model did not look at. 
+
+Here we do get several variables which reach the significance threshold (ndvi_se: Pr = 0.026456,
+reanalysis_dew_point_temp_k: Pr = 0.000193, reanalysis_specific_humidity_g_per_kg: Pr = 1.60e-08, station_avg_temp_c: 
+Pr = 0.013404, station_diur_temp_rng_c: Pr = 0.024334, station_min_temp_c: Pr = 0.028191)
+
+https://stackoverflow.com/questions/22580379/how-do-i-exclude-specific-variables-from-a-glm-in-r
+```{r Dropterms}
+fullglm = MASS::glm.nb(total_cases ~. , data = dengue_features_train)
+summary(fullglm)
+```
+
+Let's drop some terms
+```{r}
+dropterm(fullglm)
+```
+
+We'll drop reanalysis_max_air_temp_k for starters.
+```{r}
+fullglm = MASS::glm.nb(total_cases ~. -reanalysis_max_air_temp_k, data = dengue_features_train)
+dropterm(fullglm)
+```
+Strangely min temp is being suggested as the dropterm.
+```{r}
+fullglm = MASS::glm.nb(total_cases ~. -reanalysis_max_air_temp_k -ndvi_sw, data = dengue_features_train)
+dropterm(fullglm)
+```
+
+```{r}
+fullglm = MASS::glm.nb(total_cases ~. -reanalysis_max_air_temp_k -ndvi_sw -reanalysis_min_air_temp_k, data = dengue_features_train)
+dropterm(fullglm)
+```
+
+```{r}
+fullglm = MASS::glm.nb(total_cases ~. -reanalysis_max_air_temp_k -ndvi_sw -reanalysis_min_air_temp_k -reanalysis_relative_humidity_percent, data = dengue_features_train)
+dropterm(fullglm)
+```
+
+```{r}
+fullglm = MASS::glm.nb(total_cases ~. -reanalysis_max_air_temp_k -ndvi_sw -reanalysis_min_air_temp_k -reanalysis_relative_humidity_percent -station_max_temp_c, data = dengue_features_train)
+dropterm(fullglm)
+```
+
+```{r}
+fullglm = MASS::glm.nb(total_cases ~. -reanalysis_max_air_temp_k -ndvi_sw -reanalysis_min_air_temp_k -reanalysis_relative_humidity_percent -station_max_temp_c -station_precip_mm, data = dengue_features_train)
+dropterm(fullglm)
+```
+
+```{r}
+fullglm = MASS::glm.nb(total_cases ~. -reanalysis_max_air_temp_k -ndvi_sw -reanalysis_min_air_temp_k -reanalysis_relative_humidity_percent -station_max_temp_c -station_precip_mm -ndvi_ne, data = dengue_features_train)
+dropterm(fullglm)
+```
+
+```{r}
+fullglm = MASS::glm.nb(total_cases ~. -reanalysis_max_air_temp_k -ndvi_sw -reanalysis_min_air_temp_k -reanalysis_relative_humidity_percent -station_max_temp_c -station_precip_mm -ndvi_ne -reanalysis_tdtr_k, data = dengue_features_train)
+dropterm(fullglm)
+```
+
+```{r}
+fullglm = MASS::glm.nb(total_cases ~. -reanalysis_max_air_temp_k -ndvi_sw -reanalysis_min_air_temp_k -reanalysis_relative_humidity_percent -station_max_temp_c -station_precip_mm -ndvi_ne -reanalysis_tdtr_k -reanalysis_precip_amt_kg_per_m2, data = dengue_features_train)
+dropterm(fullglm)
+```
+Uhh we'll drop the terms that don't change the AIC now(?)
+```{r}
+fullglm = MASS::glm.nb(total_cases ~. -reanalysis_max_air_temp_k -ndvi_sw -reanalysis_min_air_temp_k -reanalysis_relative_humidity_percent -station_max_temp_c -station_precip_mm -ndvi_ne -reanalysis_tdtr_k -reanalysis_precip_amt_kg_per_m2 -precipitation_amt_mm, data = dengue_features_train)
+dropterm(fullglm)
+```
+
+```{r}
+fullglm <- MASS::glm.nb(total_cases ~. -reanalysis_max_air_temp_k -ndvi_sw -reanalysis_min_air_temp_k -reanalysis_relative_humidity_percent -station_max_temp_c -station_precip_mm -ndvi_ne -reanalysis_tdtr_k -reanalysis_precip_amt_kg_per_m2 -precipitation_amt_mm -reanalysis_sat_precip_amt_mm, data = dengue_features_train)
+dropterm(fullglm)
+```
+
+Ok now we really can't drop any more terms. There are no longer any terms that when dropped will reduce the AIC of the
+model.
+
+```{r}
+summary(fullglm)
+
+benchmark <- MASS::glm.nb(total_cases ~ reanalysis_specific_humidity_g_per_kg + reanalysis_dew_point_temp_k + station_avg_temp_c + station_min_temp_c, data = dengue_features_train)
+# Compare
+cat("dropterm result: ", fullglm$aic)
+cat("\nbenchmark result: ", benchmark$aic)
+```
+
+When we compare our two models, we found 11 "good" variables and had a lower AIC (9147.673) than the benchmark
+(9421.378). It should be noted that the benchmark seperated the two cities so that would not be incuded in their model.
+Had we dropped city our AIC would have risen to 9186.3 which is still lower than the benchmark model. 
+
 # Acknowledgements
 
-Cite online sources used.
+Fallon tried to help me with binning data but golly I just don't get it.
+
+Online resources are refrenced as they appear in the code.
