@@ -1,0 +1,307 @@
+---
+title: "Lab 08/Homework 6"
+author: "Robert Han"
+date: "23 Mar 2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading Libraries
+
+```{r Load Libraries, include=FALSE}
+if (!require("devtools")) install.packages("devtools"); library(devtools)
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse) # Load tidyverse last
+```
+
+## Objectives for Lab 8 and HW 6
+
+1. Introduction to RNA-Seq
+2. Become familiar with NGS file formats
+3. Using Galaxy on BisonNet
+4. Quality control of fastq files
+
+**This .Rmd file will be turned in before lab next week as Homework 6**
+
+## Background
+
+We will be using the dataset the following paper: 
+https://genome.cshlp.org/content/21/2/193.full
+
+The paper is also available in the Readings directory of the class repo.
+
+The Dataset is from Deep Sequencing of Poly(A)+ RNA from the Drosophila melanogaster S2-DRSC cells that have been RNAi depleted of mRNAs encoding RNA binding proteins. 
+
+For the tutorial, you will need use the following files in Galaxy: (Search them in ncbi sra site)
+Untreated: SRR031711, SRR031714, SRR031716
+RNAi: SRR031718, SRR031724, SRR031726
+
+These files were obtained from the NCBI's Sequence Read Archive: https://www.ncbi.nlm.nih.gov/sra
+Look up each of the Run Accession numbers and record the needed information below.
+
+The number of reads is listed as "# of Spots".
+
+```{r Summary}
+
+s_names <- c("SRR031711", "SRR031714", "SRR031716", "SRR031718", "SRR031724", "SRR031726")
+s_long_names <- c("S2_DRSC_Untreated-1", "S2_DRSC_Untreated-3", "S2_DRSC_Untreated-4", "S2_DRSC_CG8144_RNAi-1", "S2_DRSC_CG8144_RNAi-3", "S2_DRSC_CG8144_RNAi-4")
+s_layout <- c("SINGLE", "PAIRED", "PAIRED", "SINGLE", "PAIRED", "PAIRED")
+s_reads <- c(6064911, 5327425, 5921707, 6724171, 5962418, 6372581)
+s_bases <- c(272.9*10^6, 394.2*10^6, 438.2*10^6, 302.6*10^6, 441.2*10^6, 471.6*10^6)
+
+SRAsummary <- data.frame(matrix(ncol = 5, nrow = 0))
+names(SRAsummary) <- c("SampleName", "LongName", "Layout", "Reads", "Bases")
+
+for (i in 1:length(s_names)){
+  SRAsummary %>% 
+  add_row(
+    SampleName = s_names[i], 
+    LongName = s_long_names[i], 
+    Layout = s_layout[i],                         # or "PAIRED"
+    Reads = s_reads[i], 
+    Bases = s_bases[i]) -> SRAsummary
+} 
+```
+
+Calculate how long each read is expected to be:
+
+```{r}
+SRAsummary %>%
+  mutate(ReadLength = round(Bases / (Reads * (1 + (Layout == "PAIRED"))))) -> SRAsummary
+print(SRAsummary)
+write_csv(SRAsummary, path = "SRAsummary.csv")
+```
+
+## Study Design
+
+Review the material at https://rnaseq.uoregon.edu/, in the paper, and in the SRA to answer the following questions:
+
+1. What are the biological conditions that we are going to compare? 
+
+A comparison of splicing regulators between the fruit flies and humans ps-repressed/activated exons.
+
+2. How many biological replicates are we studying for each condition?
+
+Treated (PS targeted): biological quadruplicate
+Untreated: biological triplicate
+
+3. What sequencing platform was used?
+
+Illumina
+
+4. What selection scheme (if any) was performed on the RNA?
+
+Size selection 
+
+5. What was the depth of sequencing for each condition (min, max, and mean)?
+
+Read lengths between 37 and 45 
+
+6. What library prep protocol used? If a stranded library prep was used, what is the strandedness of the reads?
+
+Illumina mRNA-seq prep kit
+
+7. Were the sequences single-end or paired end?
+
+Both single-ended and pair ended
+
+8. What is the length of the reads?
+
+37 nt
+
+## Next Generation Sequencing Files
+
+The first type of file that we will examine is a fastq file. 
+The "q" is for quality scores. It is a sequence file (usually DNA) that includes a quality score for every base.
+Fastq files are flat text files, but they are often found gzipped to save space, with the extension .fastq.gz or .fq.gz
+
+To look at fastq files in R, we will use the ShortRead package: 
+https://kasperdanielhansen.github.io/genbioconductor/html/ShortRead.html
+
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("ShortRead")
+library(ShortRead)
+```
+The ShortRead package was one of the first Bioconductor packages to deal with low-level analysis of high-throughput sequencing data. 
+Some of its functionality has now been superseded by other packages, but there is still relevant functionality left.
+
+Reading FASTQ files
+The FASTQ file format is the standard way of representing raw (unaligned) next generation sequencing reads, particular for the Illumina platform. The format basically consists of 4 lines per read, with the lines containing
+
+1. Read name (sometimes includes flowcell ID or other information).
+2. Read nucleotides
+3. Either empty or a repeat of line 1
+4. Encoded read quality scores
+
+Paired-end reads are (usually) stored in two separate files, where the reads are ordered the same (this is obviously fragile; what if reads are re-ordered in one file and not the other).
+
+These files are read by `readFastq()` which produces an object of class `ShortReadQ`.
+
+```{r}
+list.files()
+read_1 <- readFastq("SRR031714_1.head400.fastq")
+read_2 <- readFastq("SRR031714_2.head400.fastq")
+```
+
+The ShortReadQ class has an id and two sets of strings: one for the read nucleotides and one for the base qualities. 
+We can check these strings for the first ten reads and also that the ids match between read_1 and read_2.
+
+```{r}
+id(read_1)[1:10]
+sread(read_1)[1:10]
+quality(read_1)[1:10]
+# Check that ids match
+id(read_2)[1:10]
+# The end of each id is different for read 1 and read 2 (as expected).
+# To remove this we can use gsub and then check that the read names match
+?gsub
+sum(gsub("/1", "", id(read_1)) == gsub("/2", "", id(read_2)))
+sum(gsub("/1", "", id(read_1)) != gsub("/2", "", id(read_2)))
+```
+
+Note how the quality scores are listed as characters. You can convert them into standard 0-40 integer quality scores by
+
+```{r}
+as(quality(read_1), "matrix")[1:10,1:37]
+```
+
+In this conversion, each letter is matched to an integer between 0 and 40. 
+This matching is known as the “encoding” of the quality scores and there has been different ways to do this encoding. 
+Unfortunately, it is not stored in the FASTQ file which encoding is used, so you have to know or guess the encoding. 
+The ShortRead package does this for you.
+
+These numbers are related to the probability that the reported base is different from the template fragment (ie. a sequence error).
+
+# Galaxy!
+
+Log in at http://galaxy.bucknell.edu
+
+You must be on campus or connected to the VPN to access Galaxy on BisonNet.
+
+Take the interactive tours on the `Galaxy UI` and the `History`.
+
+## Moving shared data into your history
+
+Click on the `Shared Data > Data Libraries` tab.
+
+Click the Pasilla Datset. Select all of the files and then `To History > as Datasets`.
+
+Click `Analyze Data` and verify that the 10 data files have been moved to the History.
+
+Click the eye icon next to each to verify that the files look like they are in the proper fastq format and that the reads are the expected length:  
+https://support.illumina.com/bulletins/2016/04/fastq-files-explained.html
+
+## Running FastQC
+
+In the Tools section, type FastQC in the search box and then click the matching tool.
+
+Run FastQC on one of the files and then wait for it to complete.
+
+View the results by clicking on the eye icon for the Webpage output.
+
+Run FastQC on each of the fastq files.
+
+When all of the jobs are complete (this may take a little while), run the MultiQC tool to aggregate all of the FastQC results into a single report. 
+In MultiQC, first change the input type from Bamtools to FastQC.
+To select multiple files as input, use command-click (Mac) or ctrl-click (PC).
+
+After MultiQC is run, compare the samples to determine if there are any large differences in quality problems between them. 
+
+You may want to download the MultiQC webpage, unzip it, and open the html file in a browser so that you can view it without logging in to Galaxy. 
+Download a file from Galaxy by clicking on it in the History area and then clicking the disk icon.
+
+## QC Summary
+
+http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
+
+Review the examples of "Good" and "Bad" Illumina data and summarize your impressions of this dataset. 
+
+## Trimmomatic
+
+http://www.usadellab.org/cms/index.php?page=trimmomatic
+
+To try to improve the quality of this dataset, we will use trimmomatic. 
+Trimmomatic performs a variety of useful trimming tasks for illumina paired-end and single ended data. 
+
+Use Galaxy to run trimmomatic on each of the files, paying close attention to the PAIRED files and processing them as `two separate input files`. 
+
+Use the following trimmomatic parameters (http://journal.frontiersin.org/article/10.3389/fgene.2014.00013/full):
+
+1. "Perform initial ILLUMINACLIP step?" should be changed to Yes and the settings changed to TruSeq2 (single or paired, as appropriate) and 2:40:15:8. Note that the adapter sequences to be used should match the sequencing technology used to obtain the reads. According to the SRA metadata, these files were obtained using a Genome Analyzer II (GAII) and so TruSeq2 is the correct primer file.
+
+2. "SLIDINGWINDOW" should be changed to "Average quality required" = 5
+
+3. Then "Insert trimmomatic operation" and set it to "MINLEN" = 25
+
+Run trimmomatic on each set of files (a total of 6 times).
+
+For the paired files, trimmomatic will produce 4 output files: R1 Paired, R2 Paired, R1 Unpaired, and R2 Unpaired. 
+The unpaired files contain reads that were orphaned when their mate was discarded due to the trimming settings. 
+They can be used in some analyses, but we will not be needing them, so it is best to delet them at this point so they don't confuse us later.
+
+## FastQC and MultiQC
+
+Now run FastQC and MultiQC on the trimmed data. Has it improved? Is it "good" yet?
+
+1. How many reads were removed from each file during the trimming step?
+
+Total sequences removed (in millions):
+RNAi-1:      0.1
+RNAi-3:      1
+RNAi-4:      0.1
+Untreated-1: 0.1
+Untreated-3: 0.1
+Untreated-4: 0.8
+
+2. What are the read lengths of each file after trimming (min, max, mean)?
+
+Sample Name	             % Dups	 % GC	 Length	 M Seqs
+S2_DRSC_CG8144_RNAi-1	    28.7%	  49%	  44 bp	  35.2
+S2_DRSC_CG8144_RNAi-3_R1	46.2%	  54%	  37 bp	  12.3
+S2_DRSC_CG8144_RNAi-3_R2	0.2%	  55%	  37 bp	  12.3
+S2_DRSC_CG8144_RNAi-4_R1	50.7%	  55%	  37 bp	  12.5
+S2_DRSC_CG8144_RNAi-4_R2	48.0%	  55%	  37 bp	  12.5
+S2_DRSC_Untreated-1	      2.8%	  51%	  45 bp	  34.3
+S2_DRSC_Untreated-3_R1	  45.3%	  53%	  37 bp	  10.6
+S2_DRSC_Untreated-3_R2	  32.5%	  53%	  37 bp	  10.6
+S2_DRSC_Untreated-4_R1	  47.4%	  54%	  37 bp	  12.2
+S2_DRSC_Untreated-4_R2	  37.3%	  55%	  37 bp	  12.2
+
+
+Sample Name	                                       % Dups	 % GC	 Length	 M Seqs
+Trimmomatic on S2_DRSC_CG8144_RNAi-3_R1 _R1 paired	38.6%	 54%	 35 bp	  6.7
+Trimmomatic on S2_DRSC_CG8144_RNAi-3_R2 _R2 paired	22.2%	 54%	 33 bp	  6.7
+Trimmomatic on S2_DRSC_CG8144_RNAi-4_R1 _R1 paired	46.5%	 54%	 36 bp	  11.5
+Trimmomatic on S2_DRSC_CG8144_RNAi-4_R2 _R2 paired	39.6%	 54%	 35 bp	  11.5
+Trimmomatic on S2_DRSC_Untreated-3_R1 _R1 paired	  39.8%	 53%	 36 bp	  9.7
+Trimmomatic on S2_DRSC_Untreated-3_R2 _R2 paired	  44.2%	 53%	 36 bp	  9.7
+Trimmomatic on S2_DRSC_Untreated-4_R1 _R1 paired	  39.5%	 53%	 36 bp	  7.1
+Trimmomatic on S2_DRSC_Untreated-4_R2 _R2 paired	  29.3%	 53%	 33 bp	  7.1
+
+3. After trimming, how do the quality of the single-end reads compare to the paired-end reads (within each treatment group)?
+
+Phred scores improve.
+
+4. After trimming, how do the quality of the RNAi treated reads compare to the control reads (within each sequencing layout type)?
+
+After trimming the sequence quality appears to improve Phred scores for the paired end reads are in the green area for all base positions in the read whereas the 
+
+5. Do you anticipate any problems using this data to compare differential transcript expression between the two treatment groups?
+
+I think that after trimming the quality of the data has improved to a point where we should not expect blaring problems when comparing the transcript expressions.
+
+## Helpful RNA-Seq Links
+
+RNA-seqlopedia: https://rnaseq.uoregon.edu/
+
+RNA-Seq Blog: http://www.rna-seqblog.com/
+
+QCFAIL Blog: https://sequencing.qcfail.com/
+(Unfortunately it looks like they are no longer posting, but they have some great posts about problems with certain Illumina sequencers.)
+
+QCFAIL post about SRA file corruption: https://sequencing.qcfail.com/articles/data-can-be-corrupted-upon-extraction-from-sra-files/ 
+(This is why it is so important to look at the raw fastq files and check the lengths of the reads before trimming.)
