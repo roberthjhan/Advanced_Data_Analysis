@@ -1,0 +1,47 @@
+---
+title: "ideal Lab"
+author: "Ken Field"
+date: "1/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("ideal")
+library(ideal)
+if (!require("airway")) BiocManager::install("airway"); library(airway)
+if (!require("org.Hs.eg.db")) BiocManager::install("org.Hs.eg.db"); library(org.Hs.eg.db)
+if (!require("DESeq2")) install.packages("DESeq2"); library(DESeq2)
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
+```
+
+## ideal Tutorial
+
+```{r Tutorial}
+data(airway)
+airway
+dds_airway <- DESeq2::DESeqDataSetFromMatrix(assay(airway),
+                                             colData = colData(airway),
+                                             design=~cell+dex)
+# run deseq on it
+dds_airway <- DESeq(dds_airway)
+# extract the results
+res_airway <- results(dds_airway, contrast = c("dex","trt","untrt"),alpha = 0.05)
+## Launching ideal - Choose one of the following options
+ideal(dds_airway)
+# providing the results object
+ideal(dds_obj = dds_airway,res_obj = res_airway)
+# providing the annotations
+genenames_airway <- mapIds(org.Hs.eg.db,keys = rownames(dds_airway),column = "SYMBOL",keytype="ENSEMBL")
+annotation_airway <- data.frame(gene_id = rownames(dds_airway),
+                                gene_name = genenames_airway,
+                                row.names = rownames(dds_airway),
+                                stringsAsFactors = FALSE)
+head(annotation_airway)  
+ideal(dds_obj = dds_airway, res_obj = res_airway,
+      annotation_obj = annotation_airway)
+```
+
+It might be best to run the first option and then walk through the rest interactively.

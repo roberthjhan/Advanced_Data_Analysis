@@ -1,0 +1,84 @@
+---
+title: "Lab 09"
+author: "Robert Han"
+date: "30 Mar 2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading Libraries
+
+```{r Load Libraries, include=FALSE}
+if (!require("devtools")) install.packages("devtools"); library(devtools)
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse) # Load tidyverse last
+```
+
+## Objectives for Lab 9 and HW 7
+
+1. Introduction to Differential Expression
+2. Short read alignment demonstration
+3. Differential transcript expression measurement
+4. Comparison of methods of differential expression
+
+**This .Rmd file will be turned in before lab next week as Homework 7**
+
+## Background
+
+We will be continuing to use the dataset the following paper: 
+https://genome.cshlp.org/content/21/2/193.full
+
+The paper is also available in the Readings directory of the class repo.
+
+The Dataset is from Deep Sequencing of Poly(A)+ RNA from the Drosophila melanogaster S2-DRSC cells that have been RNAi depleted of mRNAs encoding RNA binding proteins. 
+
+Last week, you used Galaxy to perform Quality Control on the following files from the SRA: 
+Untreated: SRR031711, SRR031714, SRR031716
+RNAi: SRR031718, SRR031724, SRR031726
+
+These files were obtained from the NCBI's Sequence Read Archive: https://www.ncbi.nlm.nih.gov/sra
+
+You should have the 10 trimmed files in your Galaxy History. 
+You can also find the trimmed files in the RNASeq Group Project section of the Shared Data, Data Libraries tab.
+
+## Genome-based alignment
+
+Because this experiment was performed on D.
+
+## Read Alignment
+
+For demonstration purposes, we are going to run Kallisto to map the reads to the transcriptome. 
+Kallisto is a pseudo-aligner, which means that it does not actually align each read to each transcript.
+Instead, it uses kmer matching to determine (with very high accuracy) the transcript that each read most likely matches. 
+We will be comparing pseudo-aligners (like Kallisto and Salmon) to true aligners (like Bowtie2 and STAR).
+
+## Lab 9
+
+For lab this week you will complete the [Galaxy](1-Galaxy.md) and [SARTools](2-SARTools.md) tutorials. 
+
+You will need the following files from the the RNASeq Group Project section of the Shared Data, Data Libraries tab:
+
+1. The drosophila transcriptome:
+Drosophila_melanogaster.BDGP6.cdna.all.fa.gz
+
+2. The drosophila genome:
+Drosophila_melanogaster.BDGP6.95.chr.gtf.gz
+
+3. The gene models to generate the drosophila transcriptome from the drosophila genome:
+Drosophila_melanogaster.BDGP6.dna.toplevel.fa.gz
+
+Note that you will only need either file #1 or files #2 and #3 - depending on the mapping program that you use.
+
+## Helpful RNA-Seq Links
+
+RNA-seqlopedia: https://rnaseq.uoregon.edu/
+
+RNA-Seq Blog: http://www.rna-seqblog.com/
+
+QCFAIL Blog: https://sequencing.qcfail.com/
+(Unfortunately it looks like they are no longer posting, but they have some great posts about problems with certain Illumina sequencers.)
+
+QCFAIL post about SRA file corruption: https://sequencing.qcfail.com/articles/data-can-be-corrupted-upon-extraction-from-sra-files/ 
+(This is why it is so important to look at the raw fastq files and check the lengths of the reads before trimming.)

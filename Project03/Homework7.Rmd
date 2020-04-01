@@ -1,0 +1,63 @@
+---
+title: "Homework 7"
+author: "Biology Student"
+date: "1 Apr 2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading Libraries
+
+```{r Load Libraries, include=FALSE}
+if (!require("devtools")) install.packages("devtools"); library(devtools)
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse) # Load tidyverse last
+```
+
+## Prerequisites for Homework 7
+
+1. Completion of the [Galaxy](1-Galaxy.md) and [SARTools](2-SARTools.md) tutorials.
+2. Results from either EdgeR and DESeq2 analysis of differential **gene** expression of the Pasilla dataset (after batch effect correction)
+3. Results from the EdgeR and DESeq2 analysis of differential **transcript** expression of the Pasilla dataset (after batch effect correction)
+
+## Objectives
+
+[ ] Confirm whether Pasilla gene expression was knocked down by the RNAi treatment
+[ ] Compare the differential transcript expression detected by edgeR and DESeq2
+
+## Pasilla Gene Analysis
+
+1. Use http://flybase.org/ to determine the FlyBase **gene** name(s) for the Pasilla gene. 
+2. Load in the gene expression results from either EdgeR or DESeq2.
+3. Determine if the Pasilla gene was differentially expressed in the treated samples.
+
+```{r}
+
+```
+
+## Comparison of EdgeR and DESeq2
+
+1. Load in the transcript expression results from both EdgeR or DESeq2.
+2. Determine the number of differentially expressed transcripts detected by each program.
+3. Compare the identity of the transcripts differentially expressed
+
+```{r}
+
+```
+
+
+## Helpful RNA-Seq Links
+
+Pasilla paper: https://genome.cshlp.org/content/21/2/193.full
+
+RNA-seqlopedia: https://rnaseq.uoregon.edu/
+
+RNA-Seq Blog: http://www.rna-seqblog.com/
+
+QCFAIL Blog: https://sequencing.qcfail.com/
+(Unfortunately it looks like they are no longer posting, but they have some great posts about problems with certain Illumina sequencers.)
+
+QCFAIL post about SRA file corruption: https://sequencing.qcfail.com/articles/data-can-be-corrupted-upon-extraction-from-sra-files/ 
+(This is why it is so important to look at the raw fastq files and check the lengths of the reads before trimming.)
