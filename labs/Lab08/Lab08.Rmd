@@ -51,8 +51,12 @@ s_layout <- c("SINGLE", "PAIRED", "PAIRED", "SINGLE", "PAIRED", "PAIRED")
 s_reads <- c(6064911, 5327425, 5921707, 6724171, 5962418, 6372581)
 s_bases <- c(272.9*10^6, 394.2*10^6, 438.2*10^6, 302.6*10^6, 441.2*10^6, 471.6*10^6)
 
-SRAsummary <- data.frame(matrix(ncol = 5, nrow = 0))
-names(SRAsummary) <- c("SampleName", "LongName", "Layout", "Reads", "Bases")
+SRAsummary <- data.frame(SampleName=character(),
+                         LongName=character(),
+                         Layout=character(),
+                         Reads=double(),
+                         Bases=double(),
+                         stringsAsFactors=FALSE) # This updated code fixed the problem with the original Rmd
 
 for (i in 1:length(s_names)){
   SRAsummary %>% 
