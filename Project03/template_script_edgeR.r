@@ -35,9 +35,9 @@ varInt <- "group"                                    # factor of interest
 condRef <- "WT"                                      # reference biological condition
 batch <- NULL                                        # blocking factor: NULL (default) or "batch" for example
 
-idColumn = 1                                         # column with feature Ids (usually 1)
-countColumn = 5                                      # column with counts  (2 for htseq-count, 7 for featurecounts, 5 for RSEM/Salmon, 4 for kallisto)
-rowSkip = 0                                          # rows to skip (not including header) 
+idColumn <- 1                                        # column with feature Ids (usually 1)
+countColumn <- 5                                     # column with counts  (2 for htseq-count, 7 for featurecounts, 5 for RSEM/Salmon, 4 for kallisto)
+rowSkip <- 0                                         # rows to skip (not including header) 
 
 alpha <- 0.05                                        # threshold of statistical significance
 pAdjustMethod <- "BH"                                # p-value adjustment method: "BH" (default) or "BY"

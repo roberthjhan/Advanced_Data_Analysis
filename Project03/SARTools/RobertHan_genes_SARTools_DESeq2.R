@@ -19,18 +19,20 @@ if (!require("SARTools")) install_github("KField-Bucknell/SARTools", build_vigne
 ################################################################################
 rm(list=ls())                                        # remove all the objects from the R session
 
-workDir <- "/Users/robert/Documents/School/Advanced Data Analysis/rob_han/Project03/SARTools/SARToolsDESeq2.genes"
+workDir <- "/Users/robert/Documents/School/Advanced Data Analysis/rob_han/Project03/SARTools/SARToolsDESeq2.batch.transcripts"
  
-projectName <- "SARTools.DESeq2.genes"                         # name of the project
+projectName <- "SARToolsDESeq2.batch.transcripts"                         # name of the project
 author <- "Robert Han"                                # author of the statistical analysis/report
 
-targetFile <- "../genes.target.txt"                           # path to the design/target file
+targetFile <- "../transcripts.target.txt"                           # path to the design/target file
 rawDir <- "../"                                      # path to the directory containing raw counts files
-featuresToRemove <- NULL       # names of the features to be removed
+featuresToRemove <- NULL                              # names of the features to be removed
                     
 varInt <- "Treatment"                                    # factor of interest
 condRef <- "Untreated"                                      # reference biological condition
-batch <- NULL                                        # blocking factor: NULL (default) or "batch" for example
+#batch <- NULL                                        # blocking factor: NULL (default) or "batch" for example
+batch <- "batch"                                        # blocking factor: NULL (default) or "batch" for example
+
 
 idColumn = 1                                         # column with feature Ids (usually 1)
 countColumn = 5                                      # column with counts  (2 for htseq-count, 7 for featurecounts, 5 for RSEM/Salmon, 4 for kallisto)
@@ -65,11 +67,11 @@ library(SARTools)
 if (forceCairoGraph) options(bitmapType="cairo")
 
 # checking parameters
-checkParameters.edgeR(projectName=projectName,author=author,targetFile=targetFile,
-                      rawDir=rawDir,featuresToRemove=featuresToRemove,varInt=varInt,
-                      condRef=condRef,batch=batch,alpha=alpha,pAdjustMethod=pAdjustMethod,
-                      cpmCutoff=cpmCutoff,gene.selection=gene.selection,
-                      normalizationMethod=normalizationMethod,colors=colors)
+checkParameters.DESeq2(projectName=projectName,author=author,targetFile=targetFile,
+                       rawDir=rawDir,featuresToRemove=featuresToRemove,varInt=varInt,
+                       condRef=condRef,batch=batch,fitType=fitType,cooksCutoff=cooksCutoff,
+                       independentFiltering=independentFiltering,alpha=alpha,pAdjustMethod=pAdjustMethod,
+                       typeTrans=typeTrans,locfunc=locfunc,colors=colors)
 
 # loading target file
 target <- loadTargetFile(targetFile=targetFile, varInt=varInt, condRef=condRef, batch=batch)
@@ -95,7 +97,7 @@ summaryResults <- summarizeResults.DESeq2(out.DESeq2, group=target[,varInt], col
                                           cooksCutoff=cooksCutoff, alpha=alpha)
 
 # save image of the R session
-save.image(file=paste0(projectName, ".RData"))
+#save.image(file=paste0(projectName, ".RData"))
 
 # generating HTML report
 writeReport.DESeq2(target=target, counts=counts, out.DESeq2=out.DESeq2, summaryResults=summaryResults,
