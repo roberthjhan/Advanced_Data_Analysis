@@ -17,7 +17,7 @@ if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse) # L
 ```
 
 
-```{r EZ print}
+```{r EZ print, include=FALSE}
 #to call EZ_print store the things to be printed in a variable (l = c(a, b, c, d...)) then call EZ_print(l)
 EZ_print <- function(arg) {
   return(cat(paste(arg)))
