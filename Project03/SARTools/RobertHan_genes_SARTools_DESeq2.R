@@ -19,19 +19,19 @@ if (!require("SARTools")) install_github("KField-Bucknell/SARTools", build_vigne
 ################################################################################
 rm(list=ls())                                        # remove all the objects from the R session
 
-workDir <- "/Users/robert/Documents/School/Advanced Data Analysis/rob_han/Project03/SARTools/SARToolsDESeq2.batch.transcripts"
- 
-projectName <- "SARToolsDESeq2.batch.transcripts"                         # name of the project
+workDir <- "/Users/robert/Documents/School/Advanced Data Analysis/rob_han/Project03/Sailfish/Sailfish.DESeq2.genes"     # working directory for the R session
+
+projectName <- "Sailfish.DESeq2.genes"                         # name of the project
 author <- "Robert Han"                                # author of the statistical analysis/report
 
-targetFile <- "../transcripts.target.txt"                           # path to the design/target file
+targetFile <- "../genes.target.txt"                           # path to the design/target file
 rawDir <- "../"                                      # path to the directory containing raw counts files
 featuresToRemove <- NULL                              # names of the features to be removed
                     
 varInt <- "Treatment"                                    # factor of interest
 condRef <- "Untreated"                                      # reference biological condition
-#batch <- NULL                                        # blocking factor: NULL (default) or "batch" for example
-batch <- "batch"                                        # blocking factor: NULL (default) or "batch" for example
+batch <- NULL                                        # blocking factor: NULL (default) or "batch" for example
+#batch <- "batch"                                        # blocking factor: NULL (default) or "batch" for example
 
 
 idColumn = 1                                         # column with feature Ids (usually 1)
@@ -106,3 +106,4 @@ writeReport.DESeq2(target=target, counts=counts, out.DESeq2=out.DESeq2, summaryR
                    condRef=condRef, batch=batch, fitType=fitType, cooksCutoff=cooksCutoff,
                    independentFiltering=independentFiltering, alpha=alpha, pAdjustMethod=pAdjustMethod,
                    typeTrans=typeTrans, locfunc=locfunc, colors=colors)
+

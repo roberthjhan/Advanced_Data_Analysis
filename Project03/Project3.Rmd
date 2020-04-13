@@ -1,7 +1,7 @@
 ---
 title: "Project 3"
-author: "Transcriptomics Noob"
-date: "3/3/2019"
+author: "Robert Han (Transcriptomics Noob)"
+date: "6 Apr 2020"
 output: github_document
 ---
 
@@ -9,63 +9,10 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Collaboration with Git
-
-For this project, all members of the class will be working on the same git repo. 
-This could pose all kinds of problems for pushing changes, if we don't follow the proper process of forking the repo. 
-This tutorial is adapted from <http://r-bio.github.io/intro-git-rstudio/>.
-
-### Branching
-
-We will each create a copy of the RNASeqProject Repo in our own personal Github account. 
-This is called a **fork** of the repo and it will make a copy of all branches that are present at the time the copy is made. 
-On the top right of [RNASeqProject](https://github.com/Bucknell-Biol364/RNASeqProject) repo, click `Fork`.
-Then click your personal Github account, to create the fork there.
-
-Github should redirect you to the new forked repo, which is an exact copy of the original repo.
-Now use R Studio, New Project, Version Control, Git... to make a local repo of **your** forked copy. 
-
-After it has been cloned, we need to tell Git that this project has an upstream version. 
-There is no way of doing this within RStudio, so you need to enter some commands in the shell. 
-Go to Tools > Shell, and enter the address of the upstream repository
-
-`git remote add upstream https://github.com/Bucknell-Biol364/RNASeqProject.git`
-
-Make sure that it worked by typing `git remote -v` in the shell.
-It should display 4 lines, 2 that start with `origin` and the address of your fork, and 2 that start with `upstream` and the address of the upstream repository. 
-Note that here we used `upstream` to name the upstream repository but we could have given it another name. 
-In this case, upstream is just easy to remember and accurate. 
-
-A **branch** is a local copy of the repo where you can make changes without worrying about messing up your master copy.
-Switch back to R Studio and create a new **branch** to store your changes so they are separate from your master repo.
-Click `New Branch` in the Git tab.
-Name it test-branch or something relevant for the changes you plan.
-
-Make sure that you are in the new test-branch (upper right of the Git tab).
-Edit the Test.txt file by adding a line or two and save it.
-You should now be able to Commit and Push this change to Github. 
-However, you have **NOT** changed the class repo, or even your own origin branch, only your test-branch copy of it. 
-You can use this personal copy to perform your analysis and to Commit and Push changes as often as you like. 
-The stakes are higher now, because eventually you will be merging your personal copy with the class master copy. 
-Two new best practices should be followed:
-
-1. Use meaningful Commit messages. This will help others to know whether to pull your changes.
-2. Do not change the original files. Make a copy of a file before changing it and then name it using your name.
-
-The exception to this second rule will be Test.txt because we want to create some git conflicts.
-After pushing the changes to Test.txt to your personal repo, go back to github.com and refresh the page showing this repo. 
-
-When you are done making changes to Test.txt, make sure they have been Committed and Pushed.
-Go to GitHub to view your fork. 
-You can select which branch you are viewing using the Branch button.
-Switch to the test-branch and click the green `Pull request` button.
-Follow the instructions (leaving informative comments) to merge the branches by creating a pull request.
-Then approve the Pull request to complete the merge.
-
-## Lab 8
-
-For lab this week you will complete the [Galaxy](1-Galaxy.md) and [SARTools](2-SARTools.md) tutorials. 
-You should branch your personal copy of the repo for the lab and then merge it into your master copy when you are done with the analysis.
+```{r Load Libraries, include=FALSE}
+if (!require("knitr")) install.packages("knitr"); library(knitr)
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse) # Load tidyverse last
+```
 
 ## Project 3
 
@@ -75,7 +22,7 @@ You should branch your personal copy of the repo for the lab and then merge it i
 2. Understand the differences between read mapping and pseudoalignment
 3. Compare different analysis options for measuring differential expression
 4. Use an R vignette to closely examine an RNASeq analysis pipeline
-5. Collaborate as a large group to compare 13 different analysis pipelines
+5. Collaborate as a large group to compare 12 different analysis pipelines
 
 ### Tasks:
 
@@ -89,20 +36,149 @@ You should branch your personal copy of the repo for the lab and then merge it i
 ### Pipelines:
 
 ```{r echo=FALSE, results='asis'}
-library(knitr)
-Biol364_664roster <- read.csv("Biol364_664roster.csv", stringsAsFactors=FALSE)
-Biol364_664roster$Pipeline <- c("kallisto->DESeq2",
-                    "bowtie2->limma",
-                    "Salmon->limma",
-                    "bowtie2->DESeq2",
-                    "Salmon->DESeq2",
-                    "kallisto->edgeR",
-                    "STAR->DESeq2",
-                    "STAR->edgeR",
-                    "kallisto->limma",
-                    "Salmon->edgeR",
-                    "STAR->limma",
-                    "bowtie2->edgeR")
+
+Biol364_664roster <- read.csv("../../00-Syllabus/Biol364_664roster.csv", stringsAsFactors=FALSE)
+Biol364_664roster %>% 
+  dplyr::filter(!Name == "Agnes Jasinska") -> Biol364_664roster
+Biol364_664roster$Pipeline <- c(
+                  "kallisto->DESeq2",
+                  "Salmon->limma",
+                  "kallisto->edgeR",
+                  "Sailfish->DESeq2",
+                  "STAR->limma",
+                  "STAR->edgeR",
+                  "Sailfish->limma",
+                  "Salmon->DESeq2",
+                  "kallisto->limma",
+                  "Sailfish->edgeR",
+                  "STAR->DESeq2",
+                  "Salmon->edgeR")
 table(Biol364_664roster$Pipeline)
 kable(Biol364_664roster)
+write_csv(Biol364_664roster, path="Project3.pipelines.csv")
 ```
+
+### Notes on mapping pipelines
+
+#### RNA STAR
+
+Input: Drosophila_melanogaster.BDGP6.dna.toplevel.fa.gz and Drosophila_melanogaster.BDGP6.95.chr.gtf.gz
+Setting: `Count number of reads per gene` to "Yes"
+Output: "reads per gene" (BAM file can be deleted) FBgn tsv
+
+#### Kallisto
+
+Run Kallisto quant
+
+Input: Drosophila_melanogaster.BDGP6.cdna.all.fa.gz
+Output: FBtr tsv
+
+#### Salmon
+
+Input: Drosophila_melanogaster.BDGP6.cdna.all.fa.gz and Drosophila_melanogaster.BDGP6.95.chr.gtf.gz
+Output: FBtr tsv and FBgn tsv
+
+#### Sailfish
+
+Input: Drosophila_melanogaster.BDGP6.cdna.all.fa.gz and Drosophila_melanogaster.BDGP6.95.chr.gtf.gz
+Output: FBtr tsv and FBgn tsv
+
+### Preparing results for DEBrowser
+
+After you download the tsv file(s) from Galaxy, you will need to reformat it so that it matches what is expected by DEBrowser and metadata.tsv
+Do not use Excel or a text editor to alter the file - use dplyr!
+
+Load in your tsv file(s) and use `dplyr::select()` and/or `rename()` to make sure that you have the correct data. 
+Then save the data using `write_tsv()`
+
+```{r}
+metadata <- read_tsv("DEBrowser/metadata.tsv", trim_ws = TRUE)
+print(metadata)
+
+
+```
+
+### Running DEBrowser
+
+https://debrowser.readthedocs.io/en/master/index.html
+
+Use the [DEBrowser.R](DEBRowser/DEBrowser.R) script to load the DEBrowser library and launch the Shiny app. 
+You should probably click the Open in Browser button so that you can run DEBrowser in a web browser.
+
+1. Load in your results and the metadata file.
+
+If you have trouble loading in your results, double-check that every column in your tsv is an exact match for the samples listed in the metadata.tsv file:
+Name	RNAi_1	RNAi_3	RNAi_4	Untreated_1	Untreated_3	Untreated_4
+
+2. Filter the counts.
+
+Select "CPM", "<1", and "3" to filter out any transcripts/genes with fewer than 1 CPM in at least 3 samples.
+
+3. Batch Effect Correction
+
+Select "TMM" for normalization, "Combat" for Correction Method, "condition" for Treatment, and "batch" for Batch.
+
+Check the PCA plots to verify that the batch correction was successful.
+
+4. DE Analysis
+
+Select New Comparison and verify that the three RNAi samples are "Condition 1" and the untreated samples are "Condition 2".
+
+For DE Method choose DESeq2, EdgeR, or Limma, depending on your assigned pipeline. 
+(Note that DEBrowser makes it easy to run all three, if you want.)
+Leave the settings for the DE Method as the default and make note of them for the future.
+
+Read about the DE Analysis results from DEBrowser: https://debrowser.readthedocs.io/en/master/deseq/deseq.html
+
+*Change the "padj value cut off" to 0.05 and leave "foldChange" set to 2.*
+
+Click "Download" to save a csv file of the differentially expressed genes/transcripts. 
+
+The first file will contain the upregulated genes (because Data Type: Up is selected).
+You will also need to download the downregulated genes (after selecting Data Type: Down)
+
+This file will be used to complete the Group Project. 
+It should be named using the following convention:
+
+Mapper.DEmethod.Features.UpDown.csv
+
+Mapper should equal kallisto, Salmon, Sailfish, or STAR.
+DEmethod should equal DESeq2, edgeR, or limma.
+Features should equal genes or transcripts.
+UpDown should equal Up or Down.
+
+5. Explore the results
+
+Use DEBrowser to look at the MA and Volcano plots of your results. 
+Explore the expression of the following genes/transcripts:
+
+Pasilla
+
+sesB/Ant2
+
+bmm
+
+dre4
+
+Are the results that you see consistent with those reported in Figure 3 of the paper? https://genome.cshlp.org/content/21/2/193/F3.expansion.html
+
+Our results for sesb and dre4 appear consistent with the paper. The paper shows notable downregulation of the sesb gene 
+when treated which is reflectd in both the boxplot and barplots we generated. The opposite is true for dre4 which in the
+paper appears to not change very much in response to treatment and is corroborated by the barplot and boxplot we
+generate. Boxplot in this case shows an overlap of confidence intervals. On the other hand from the paper we'd expect to
+see a small increase or small decrease in expression, probably without significant difference. Our boxplot, however, 
+shows a significant difference between treated and untreated where treated is significantly more expressed.
+
+
+
+
+
+
+
+
+
+## Acknowledgements
+
+https://cgatoxford.wordpress.com/2016/08/17/why-you-should-stop-using-featurecounts-htseq-or-cufflinks2-and-start-using-kallisto-salmon-or-sailfish/
+
+https://f1000research.com/articles/4-1521/v2

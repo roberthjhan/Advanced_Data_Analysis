@@ -6,6 +6,7 @@ if (!requireNamespace("BiocManager", quietly=TRUE))
   install.packages("BiocManager")
 BiocManager::install("debrowser")
 
+
 # 2. Load the library
 
 library(debrowser)
@@ -15,11 +16,14 @@ library(debrowser)
 if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
 
 # List the count files. You may need to change the path and pattern to match your files.
-genefilelist <- list.files(path="02-Assignments/Project03/SARTools", pattern="*.genes.tsv", full.names=T)
+
+workDir <- "/Users/robert/Documents/School/Advanced Data Analysis/rob_han/Project03/Sailfish"
+setwd(workDir)
+genefilelist <- list.files( pattern="*.genes.tsv", full.names=T)
 print(genefilelist)
 genefiles <- lapply(genefilelist, read_tsv)
 
-genefilenames <- list.files(path="02-Assignments/Project03/SARTools", pattern="*.genes.tsv", full.names=F)
+genefilenames <- list.files( pattern="*.genes.tsv", full.names=F)
 genefilenames
 
 # Use grep to change the file names into shorter sample names
@@ -31,6 +35,7 @@ samplenames <- trimws(samplenames)
 samplenames
 
 # Reformat the gene files into a single data frame
+# File for DEBrowser
 genefiles
 genefiles %>%
   bind_cols() %>%
@@ -45,9 +50,9 @@ write_tsv(genetable, path="genetable.tsv")
 
 ### Now repeat all of that for the transcript files
 
-transcriptfilelist <- list.files(path="02-Assignments/Project03/SARTools", pattern="*.transcripts.tsv", full.names=T)
+transcriptfilelist <- list.files( pattern="*.transcripts.tsv", full.names=T)
 transcriptfiles <- lapply(transcriptfilelist, read_tsv)
-transcriptfilenames <- list.files(path="02-Assignments/Project03/SARTools", pattern="*.transcripts.tsv", full.names=F)
+transcriptfilenames <- list.files( pattern="*.transcripts.tsv", full.names=F)
 
 samplenames <- gsub("S2_DRSC_CG8144_", "", transcriptfilenames)
 samplenames <- gsub("S2_DRSC_","", samplenames)
@@ -66,7 +71,7 @@ str(transcripttable)
 write_tsv(transcripttable, path="transcripttable.tsv")
 
 ## Also need to reformat the target.txt file to match the sample names
-transcripts_target <- read_delim("02-Assignments/Project03/SARTools/transcripts.target.txt", 
+transcripts_target <- read_delim("transcripts.target.txt", 
                                  "\t", escape_double = FALSE, trim_ws = TRUE)
 transcripts_target
 colnames(transcripttable) <- gsub("-","_", colnames(transcripttable))
@@ -85,6 +90,7 @@ colnames(transcripttable)[2:7] == metadata$sample
 
 # To use the annotations for drosophila
 if (!require("org.Dm.eg.db")) BiocManager::install("org.Dm.eg.db"); library(org.Dm.eg.db)
+
 
 startDEBrowser()
 

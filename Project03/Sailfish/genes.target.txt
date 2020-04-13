@@ -1,0 +1,7 @@
+label	files	batch	Treatment
+Ctrl1	S2_DRSC_Untreated-1.genes.tsv	Single	Untreated
+Ctrl3	S2_DRSC_Untreated-3.genes.tsv	Paired	Untreated
+Ctrl4	S2_DRSC_Untreated-4.genes.tsv	Paired	Untreated
+RNAi1	S2_DRSC_CG8144_RNAi-1.genes.tsv	Single	RNAi
+RNAi3	S2_DRSC_CG8144_RNAi-3.genes.tsv	Paired	RNAi
+RNAi4	S2_DRSC_CG8144_RNAi-4.genes.tsv	Paired	RNAi

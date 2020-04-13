@@ -1,0 +1,7 @@
+sample	batch	condition
+Untreated_1	Single	Untreated
+Untreated_3	Paired	Untreated
+Untreated_4	Paired	Untreated
+RNAi_1	Single	RNAi
+RNAi_3	Paired	RNAi
+RNAi_4	Paired	RNAi
