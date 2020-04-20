@@ -1,0 +1,197 @@
+---
+title: "Project 3 Summary"
+authors: "Ken Field, Riley McDonnell, Nellie Heitzman, Rob Han, Go Ogata, Will Snyder, Leila Hashemi, 
+Alyssa Peeples, Fallon Goldberg, Brenna Prevelige, Savannah Weaver, and Alicia Kim"
+date: "14 Apr 2020"
+output:
+  github_document:
+    toc: true
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Load Libraries, include=FALSE}
+if (!require("knitr")) install.packages("knitr"); library(knitr)
+if (!require("UpSetR")) install.packages("UpSetR"); library(UpSetR)
+if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse) # Load tidyverse last
+```
+
+
+```{r Loading Data, echo = FALSE}
+direct <- "/Users/robert/Documents/School/Advanced Data Analysis/Biology364-2020/02-Assignments/Project03"  
+setwd(direct)
+
+# Batch Comparison
+batchfilelist <- list.files(path = "BatchResults", pattern = "*.csv", full.names = T)
+batchfilenames <- list.files(path = "BatchResults", pattern = "*.csv", full.names = F)
+batchfiles <- lapply(batchfilelist, read_csv)
+batchfilenames <- gsub(".csv", "", batchfilenames)
+names(batchfiles) <- batchfilenames
+allbatchresults <- bind_rows(batchfiles, .id = "column_label")
+
+# Genes
+genefilelist <- list.files(path = "GeneResults", pattern = "*.csv", full.names = T)
+genefilenames <- list.files(path = "GeneResults", pattern = "*.csv", full.names = F)
+genefiles <- lapply(genefilelist, read_csv)
+genefilenames <- gsub(".csv", "", genefilenames)
+names(genefiles) <- genefilenames
+allgeneresults <- bind_rows(genefiles, .id = "column_label")
+
+# Transcripts
+transcriptfilelist <- list.files(path = "TranscriptResults", pattern = "*.csv", full.names = T)
+transcriptfilenames <- list.files(path = "TranscriptResults", pattern = "*.csv", full.names = F)
+transcriptfiles <- lapply(transcriptfilelist, read_csv)
+
+transcriptfilenames <- gsub(".csv", "", transcriptfilenames)
+names(transcriptfiles) <- transcriptfilenames
+alltranscriptresults <- bind_rows(transcriptfiles, .id = "column_label")
+
+
+### Gene Comparisons
+```
+
+```{r}
+# Verify that each results table has expected padj and fold change cutoffs
+allbatchresults %>%
+  group_by(column_label) %>%
+  summarise(max_padj = max(padj), min_foldchange = min(foldChange), max_foldchange = max(foldChange))
+
+# Count the number of genes differentially expressed
+allbatchresults %>%
+  group_by(column_label) %>%
+  dplyr::filter(str_detect(column_label, "DOWN")) %>%
+  summarize(Down = length(ID)) -> batch_summary_down
+allbatchresults %>%
+  group_by(column_label) %>%
+  dplyr::filter(str_detect(column_label, "UP")) %>%
+  summarize(Up = length(ID)) -> batch_summary_up
+
+#Combine
+batch_summary_down$column_label <- gsub(".DOWN", "", batch_summary_down$column_label)
+batch_summary_up$column_label <- gsub(".UP", "", batch_summary_up$column_label)
+batch_summary <- merge(batch_summary_up, batch_summary_down, by = "column_label")
+batch_summary <- rename(batch_summary, Pipeline = column_label)
+batch_summary
+```
+
+### Gene Comparisons
+
+Repeat the above summary for the transcript-level differential expression.
+
+```{r}
+# Verify that each results table has expected padj and fold change cutoffs
+allgeneresults %>%
+  group_by(column_label) %>%
+  summarise(max_padj = max(padj), min_foldchange = min(foldChange), max_foldchange = max(foldChange))
+
+# Count the number of genes differentially expressed
+allgeneresults %>%
+  group_by(column_label) %>%
+  dplyr::filter(str_detect(column_label, "DOWN")) %>%
+  summarize(Down = length(ID)) -> gene_summary_down
+allgeneresults %>%
+  group_by(column_label) %>%
+  dplyr::filter(str_detect(column_label, "UP")) %>%
+  summarize(Up = length(ID)) -> gene_summary_up
+
+#Combine
+gene_summary_down$column_label <- gsub(".DOWN", "", gene_summary_down$column_label)
+gene_summary_up$column_label <- gsub(".UP", "", gene_summary_up$column_label)
+gene_summary <- merge(gene_summary_up, gene_summary_down, by = "column_label")
+gene_summary <- rename(gene_summary, Pipeline = column_label)
+gene_summary
+```
+
+### Transcript Comparisons
+
+Repeat the above summary for the transcript-level differential expression.
+
+```{r}
+# Verify that each results table has expected padj and fold change cutoffs
+alltranscriptresults %>%
+  group_by(column_label) %>%
+  summarise(max_padj = max(padj), min_foldchange = min(foldChange), max_foldchange = max(foldChange))
+
+# Count the number of genes differentially expressed
+alltranscriptresults %>%
+  group_by(column_label) %>%
+  dplyr::filter(str_detect(column_label, "DOWN")) %>%
+  summarize(Down = length(ID)) -> transcript_summary_down
+alltranscriptresults %>%
+  group_by(column_label) %>%
+  dplyr::filter(str_detect(column_label, "UP")) %>%
+  summarize(Up = length(ID)) -> transcript_summary_up
+
+#Combine
+transcript_summary_down$column_label <- gsub(".DOWN", "", transcript_summary_down$column_label)
+transcript_summary_up$column_label <- gsub(".UP", "", transcript_summary_up$column_label)
+transcript_summary <- merge(transcript_summary_up, transcript_summary_down, by = "column_label")
+transcript_summary <- rename(transcript_summary, Pipeline = column_label)
+transcript_summary
+```
+
+Which pipeline resulted in the greatest numbers of genes meeting the padj and fc cutoffs?
+
+Star -> edgeR
+
+Does that necessarily mean that this pipeline was the "best"?
+
+No
+
+### Pipeline comparison
+
+Compare the transcripts or genes identified in your pipeline to at least one other pipeline.
+
+We could use a Venn diagram to make this comparison, but like pie charts these are not always the best visualization.
+
+The UpSetR package includes better tools for visualizing the intersections of multiple sets. 
+https://cran.rstudio.com/web/packages/UpSetR/vignettes/basic.usage.html
+
+The following code plots the intersection between the Gene results for all of the files loaded. 
+
+Use this example to compare your pipeline DE results to another pipeline.
+
+```{r}
+de_batch <- allbatchresults %>% 
+  dplyr::select(Pipeline = column_label, ID)
+
+intersection <- de_batch %>% mutate(value =1) %>% spread(Pipeline, value, fill =0 )
+head(intersection)
+intersection <- as.data.frame(intersection)
+upset(intersection)
+upset(intersection, empty.intersections = "on", order.by = "freq")
+```
+
+grpl() here is used to filter rows based on whether they contain a string or not. Shoutout to Brenna
+for this idea.
+https://intellipaat.com/community/7401/filtering-row-which-contains-a-certain-string-using-dplyr
+```{r}
+head(alltranscriptresults)
+de_transcript <- alltranscriptresults %>% 
+  dplyr::select(Pipeline = column_label, ID) %>%
+  dplyr::filter(grepl("Sailfish", Pipeline))
+
+de_transcript
+
+intersection <- de_transcript %>% mutate(value =1) %>% spread(Pipeline, value, fill =0 )
+head(intersection)
+intersection <- as.data.frame(intersection)
+upset(intersection)
+upset(intersection, empty.intersections = "on", order.by = "freq")
+```
+
+
+## Acknowledgements
+
+Using lapply() to run functions over a list: https://astrostatistics.psu.edu/su07/R/html/base/html/lapply.html
+
+Converting a list into a single data frame: https://stackoverflow.com/questions/2851327/convert-a-list-of-data-frames-into-one-data-frame
+
+UpSetR: https://cran.rstudio.com/web/packages/UpSetR/
+
+Converting gene lists into UpSetR format: https://crazyhottommy.blogspot.com/2016/01/upset-plot-for-overlapping-chip-seq.html
+
+Upset plots for genome analysis: https://genomespot.blogspot.com/2017/09/upset-plots-as-replacement-to-venn.html 
