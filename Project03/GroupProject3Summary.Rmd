@@ -8,6 +8,7 @@ output:
     toc: true
     toc_depth: 2
 ---
+### Project 3
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -20,7 +21,7 @@ if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse) # L
 ```
 
 
-```{r Loading Data, echo = FALSE}
+```{r Loading Data, message = FALSE}
 direct <- "/Users/robert/Documents/School/Advanced Data Analysis/Biology364-2020/02-Assignments/Project03"  
 setwd(direct)
 
@@ -48,10 +49,9 @@ transcriptfiles <- lapply(transcriptfilelist, read_csv)
 transcriptfilenames <- gsub(".csv", "", transcriptfilenames)
 names(transcriptfiles) <- transcriptfilenames
 alltranscriptresults <- bind_rows(transcriptfiles, .id = "column_label")
-
+```
 
 ### Gene Comparisons
-```
 
 ```{r}
 # Verify that each results table has expected padj and fold change cutoffs
@@ -79,7 +79,7 @@ batch_summary
 
 ### Gene Comparisons
 
-Repeat the above summary for the transcript-level differential expression.
+Repeat the above summary for the gene-level differential expression.
 
 ```{r}
 # Verify that each results table has expected padj and fold change cutoffs
@@ -139,7 +139,7 @@ Star -> edgeR
 
 Does that necessarily mean that this pipeline was the "best"?
 
-No
+No, differnece between precision and recall but we don't know which pipeline is "True" at this moment
 
 ### Pipeline comparison
 
@@ -164,6 +164,8 @@ intersection <- as.data.frame(intersection)
 upset(intersection)
 upset(intersection, empty.intersections = "on", order.by = "freq")
 ```
+
+### Comparing Sailfish->DESeq2 and Sailfish->edgeR
 
 grpl() here is used to filter rows based on whether they contain a string or not. Shoutout to Brenna
 for this idea.
