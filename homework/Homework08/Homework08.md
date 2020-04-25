@@ -55,9 +55,12 @@ methylation of the HSV viral genome to facilitate immune response
 targeting of viral genomes. The group found that inhibition of histone
 methyltransferases EZH2 and EZH1 (EZH2/1) blocked the viral lytic cycle
 of HSV from reactivation. Inhibition also induced an antiviral state in
-Adenovirus and Zika virus infections.
+Adenovirus and Zika virus
+infections.
 
 <https://mbio.asm.org/content/8/4/e01141-17#sec-10>
+
+[https://www.ncbi.nlm.nih.gov/sra/SRX2897183\[accn\]](https://www.ncbi.nlm.nih.gov/sra/SRX2897183%5Baccn%5D)
 
 ## Questions
 
