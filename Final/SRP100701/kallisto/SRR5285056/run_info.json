@@ -1,0 +1,9 @@
+{
+	"n_targets": 105129,
+	"n_bootstraps": 30,
+	"n_processed": 32852329,
+	"kallisto_version": "0.43.1",
+	"index_version": 10,
+	"start_time": "Sat Aug 19 16:57:42 2017",
+	"call": "kallisto quant --single -i /home/lynnyi/indices/Mouse.rel88.kallisto.index -o /home/lynnyi/SRP100701//kallisto/SRR5285056 -l 100 -s 70 -b 30 /home/lynnyi/SRP100701/SRR5285056.fastq"
+}
