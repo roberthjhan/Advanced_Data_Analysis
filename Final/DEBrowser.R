@@ -20,14 +20,13 @@ if (!require("tidyverse")) install.packages("tidyverse"); library(tidyverse)
 workDir <- "/Users/robert/Documents/School/Advanced Data Analysis/rob_han/Final/"
 setwd(workDir)
 
-
 ### Now repeat all of that for the transcript files
-### Recursion = TRUE will
+### Recursion = TRUE will tell R to search each subdirectory until there are no searchable directories left. (source: list.file help)
 transcriptfilelist <- list.files( pattern="*abundance.tsv", full.names=T, recursive = TRUE)
 transcriptfiles <- lapply(transcriptfilelist, read_tsv)
 transcriptfilenames <- list.files( pattern="*abundance.tsv", full.names=F, recursive = TRUE)
 
-samplenames <- gsub("SRP100701/kallisto/", "", transcriptfilenames)
+samplenames <- gsub("SRP100701/kallisto/", "", transcriptfilenames) # Editing names
 samplenames <- gsub("SRP100701/kallisto/","", samplenames)
 samplenames <- gsub(".abundance.tsv", "", samplenames)
 samplenames <- gsub("-","_", samplenames) # DEBrowser doesn't like -
@@ -44,7 +43,7 @@ str(transcripttable)
 write_tsv(transcripttable, path="transcripttable.tsv")
 
 ## Also need to reformat the target.txt file to match the sample names
-transcripts_target <- read_delim("hypothalamus.tsv", 
+transcripts_target <- read_delim("transcript.target.tsv", 
                                  "\t", escape_double = FALSE, trim_ws = TRUE)
 transcripts_target
 colnames(transcripttable) <- gsub("-","_", colnames(transcripttable))
@@ -63,28 +62,5 @@ colnames(transcripttable)[2:13] == metadata$sample
 
 # 4. Start DEBrowser
 
-# To use the annotations for drosophila
-if (!require("org.Dm.eg.db")) BiocManager::install("org.Dm.eg.db"); library(org.Dm.eg.db)
-
-
 startDEBrowser()
-
-# 5. Data Exploration with DE Browser
-
-#1 Load the Count Data File and the Metadata File
-#2 Filter the data using CPM, CPM<1, in at least 3 samples (half of the samples)
-#3 Batch correct the data using TMM normalization, Combat correction method, condition as Treatment, batch as Batch
-#4 Visualize the PCA plot by changing Color field to "condition", and Shape field to "batch"
-#5 Go to DE Analysis and Add New Comparison
-#   Set the Condition 1 samples to the Untreated and Condition 2 to the RNAi samples
-#   Chose the appropriate DE Method, and leave the parameters on the default settings
-#   Go to Main Plots and explore the MA and Volcano plots
-
-# 6. Confirm that RNAi experiment worked 
-
-#1 Load in the gene results and metadata
-#2 Filter and batch correct as above
-#3 Run the appropriate DE Analysis 
-#4 Go to the Tables and sort by log10padjust search for FBgn0261552 - this is the *pasilla* gene
-
 

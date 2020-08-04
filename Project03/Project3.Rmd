@@ -94,8 +94,6 @@ Then save the data using `write_tsv()`
 ```{r}
 metadata <- read_tsv("DEBrowser/metadata.tsv", trim_ws = TRUE)
 print(metadata)
-
-
 ```
 
 ### Running DEBrowser
